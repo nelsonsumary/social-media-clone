@@ -1,22 +1,12 @@
 import { Router } from "express";
 import multer from "multer";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
+import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { authenticateToken } from "../auth.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, "..", "uploads"),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
+import { supabase } from "../supabase.js";
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp/;
@@ -29,15 +19,33 @@ const upload = multer({
 const router = Router();
 
 router.post("/", authenticateToken, (req, res) => {
-  upload.single("image")(req, res, (err) => {
+  upload.single("image")(req, res, async (err) => {
     if (err) {
       if (err.code === "LIMIT_FILE_SIZE") return res.status(400).json({ error: "File too large (max 5MB)" });
       return res.status(400).json({ error: err.message });
     }
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    const url = `/uploads/${req.file.filename}`;
-    res.json({ url });
+    try {
+      const ext = path.extname(req.file.originalname);
+      const fileName = `${uuidv4()}${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("uploads")
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("uploads")
+        .getPublicUrl(fileName);
+
+      res.json({ url: publicUrl });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 });
 

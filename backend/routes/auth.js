@@ -6,19 +6,19 @@ import { generateToken, authenticateToken } from "../auth.js";
 
 const router = Router();
 
-router.post("/signup", (req, res) => {
+router.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    const existing = get("SELECT id FROM users WHERE email = ? OR username = ?", [email, username]);
+    const existing = await get("SELECT id FROM users WHERE email = $1 OR username = $2", [email, username]);
     if (existing) return res.status(409).json({ error: "Username or email already exists" });
 
     const id = uuidv4();
     const hashed = bcrypt.hashSync(password, 10);
-    run("INSERT INTO users (id, username, email, password) VALUES (?, ?, ?, ?)", [id, username, email, hashed]);
+    await run("INSERT INTO users (id, username, email, password) VALUES ($1, $2, $3, $4)", [id, username, email, hashed]);
 
     const token = generateToken(id);
     res.status(201).json({ token, user: { id, username, email, avatar: null, bio: "" } });
@@ -27,12 +27,12 @@ router.post("/signup", (req, res) => {
   }
 });
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
-    const user = get("SELECT * FROM users WHERE email = ?", [email]);
+    const user = await get("SELECT * FROM users WHERE email = $1", [email]);
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
@@ -47,9 +47,9 @@ router.post("/login", (req, res) => {
   }
 });
 
-router.get("/me", authenticateToken, (req, res) => {
+router.get("/me", authenticateToken, async (req, res) => {
   try {
-    const user = get("SELECT id, username, email, avatar, bio, created_at FROM users WHERE id = ?", [req.userId]);
+    const user = await get("SELECT id, username, email, avatar, bio, created_at FROM users WHERE id = $1", [req.userId]);
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   } catch (err) {
@@ -57,9 +57,9 @@ router.get("/me", authenticateToken, (req, res) => {
   }
 });
 
-router.delete("/account", authenticateToken, (req, res) => {
+router.delete("/account", authenticateToken, async (req, res) => {
   try {
-    run("DELETE FROM users WHERE id = ?", [req.userId]);
+    await run("DELETE FROM users WHERE id = $1", [req.userId]);
     res.json({ message: "Account deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
