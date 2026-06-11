@@ -621,6 +621,87 @@ body {
   text-align: center;
 }
 
+/* Verification banner */
+.verification-banner {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  padding: 12px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.resend-btn {
+  padding: 6px 16px;
+  background: #856404;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.resend-btn:hover {
+  background: #6d5300;
+}
+
+/* Verify warning inline */
+.verify-warning {
+  color: #856404;
+  font-size: 13px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Disabled buttons */
+#btn-post:disabled,
+#btn-send-message:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Full width button */
+.btn-full {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-full:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+}
+
+/* Google button wrapper */
+.google-btn-wrapper {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.google-btn-wrapper > div {
+  width: 100% !important;
+}
+
+.google-btn-wrapper iframe {
+  width: 100% !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {

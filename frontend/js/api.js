@@ -14,6 +14,11 @@ async function api(path, options = {}) {
   return data;
 }
 
+// Config
+function getConfig() {
+  return api("/config");
+}
+
 // Auth
 function signup(username, email, password) {
   return api("/auth/signup", { method: "POST", body: { username, email, password } });
@@ -21,6 +26,18 @@ function signup(username, email, password) {
 
 function login(email, password) {
   return api("/auth/login", { method: "POST", body: { email, password } });
+}
+
+function googleSignIn(credential) {
+  return api("/auth/google", { method: "POST", body: { credential } });
+}
+
+function verifyEmail(token) {
+  return api(`/auth/verify/${token}`);
+}
+
+function resendVerification() {
+  return api("/auth/resend-verification", { method: "POST" });
 }
 
 function getMe() {

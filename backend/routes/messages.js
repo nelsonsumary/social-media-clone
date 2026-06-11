@@ -2,6 +2,7 @@ import { Router } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../supabase.js";
 import { authenticateToken } from "../auth.js";
+import { requireVerified } from "../verify.js";
 
 const router = Router();
 
@@ -58,7 +59,7 @@ router.get("/:userId", authenticateToken, async (req, res) => {
   }
 });
 
-router.post("/:userId", authenticateToken, async (req, res) => {
+router.post("/:userId", authenticateToken, requireVerified, async (req, res) => {
   try {
     const { content } = req.body;
     if (!content || !content.trim()) {

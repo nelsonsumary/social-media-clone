@@ -5,18 +5,67 @@ let currentView = "feed";
 let currentChatUserId = null;
 
 // ── Page switching ──
+function showVerifyMessage(status, success) {
+  const tmpl = document.getElementById("page-verify-message");
+  document.getElementById("app").innerHTML = tmpl.innerHTML;
+  document.getElementById("verify-status").textContent = status;
+  document.getElementById("verify-status").style.color = success ? "#4caf50" : "#f44336";
+  if (!success) {
+    const btn = document.getElementById("btn-verify-login");
+    btn.style.display = "block";
+    btn.addEventListener("click", showAuthPage);
+  }
+}
+
 function showAuthPage() {
   clearSession();
   const tmpl = document.getElementById("page-auth");
   document.getElementById("app").innerHTML = tmpl.innerHTML;
   attachAuthListeners();
+  initGoogleButton();
 }
+
+async function initGoogleButton() {
+  const container = document.getElementById("google-button-container");
+  if (!container) return;
+  try {
+    const config = await getConfig();
+    if (!config.googleClientId) return;
+    if (typeof google === "undefined" || !google.accounts) {
+      setTimeout(initGoogleButton, 500);
+      return;
+    }
+    google.accounts.id.initialize({
+      client_id: config.googleClientId,
+      callback: handleGoogleCredential,
+      auto_prompt: false,
+    });
+    google.accounts.id.renderButton(container, {
+      type: "standard",
+      size: "large",
+      theme: "outline",
+      text: "sign_in_with",
+    });
+  } catch {}
+}
+
+window.handleGoogleCredential = async (response) => {
+  try {
+    const data = await googleSignIn(response.credential);
+    saveSession(data.token, data.user);
+    showApp();
+  } catch (err) {
+    alert(err.message);
+  }
+};
 
 function showApp() {
   const tmpl = document.getElementById("page-app");
   document.getElementById("app").innerHTML = tmpl.innerHTML;
   const user = getStoredUser();
   document.getElementById("sidebar-username").textContent = user?.username || "";
+
+  updateVerificationBanner();
 
   $$(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -30,15 +79,37 @@ function showApp() {
     showAuthPage();
   });
 
+  const resendBtn = document.getElementById("btn-resend-verify");
+  if (resendBtn) {
+    resendBtn.addEventListener("click", async () => {
+      try {
+        await resendVerification();
+        alert("Verification email sent!");
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+
   navigateTo("feed");
+}
+
+function updateVerificationBanner() {
+  const banner = document.getElementById("verification-banner");
+  if (!banner) return;
+  if (isVerified()) {
+    banner.classList.add("hidden");
+  } else {
+    banner.classList.remove("hidden");
+  }
 }
 
 function navigateTo(view) {
   currentView = view;
-  const container = document.getElementById("main-content");
+  const pageContent = document.getElementById("page-content");
   const tmpl = document.getElementById(`page-${view}`);
   if (!tmpl) return;
-  container.innerHTML = tmpl.innerHTML;
+  pageContent.innerHTML = tmpl.innerHTML;
 
   if (view === "feed") initFeed();
   else if (view === "messages") initMessages();
@@ -80,6 +151,7 @@ function attachAuthListeners() {
       const data = await signup(form.username.value, form.email.value, form.password.value);
       saveSession(data.token, data.user);
       showApp();
+      alert("A verification link has been sent to your email. Please check and click the link to activate your account.");
     } catch (err) {
       errEl.textContent = err.message;
     }
@@ -96,7 +168,16 @@ async function initFeed() {
     postsEl.innerHTML = '<p class="hint">Failed to load feed. Is the server running?</p>';
   }
 
-  document.getElementById("btn-post").addEventListener("click", handleCreatePost);
+  const postBtn = document.getElementById("btn-post");
+  const warning = document.getElementById("post-verify-warning");
+
+  if (!isVerified()) {
+    postBtn.disabled = true;
+    postBtn.title = "Verify your email to post";
+    warning.classList.remove("hidden");
+  } else {
+    postBtn.addEventListener("click", handleCreatePost);
+  }
 }
 
 async function handleCreatePost() {
@@ -170,10 +251,22 @@ function renderPosts(posts, container, showDelete = false) {
 
 // ── Messages ──
 async function initMessages() {
-  document.getElementById("btn-send-message").addEventListener("click", handleSendMessage);
-  document.getElementById("message-input").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleSendMessage();
-  });
+  const sendBtn = document.getElementById("btn-send-message");
+  const msgInput = document.getElementById("message-input");
+  const warning = document.getElementById("msg-verify-warning");
+
+  if (!isVerified()) {
+    sendBtn.disabled = true;
+    sendBtn.title = "Verify your email to send messages";
+    msgInput.disabled = true;
+    msgInput.placeholder = "Verify your email to send messages...";
+    warning.classList.remove("hidden");
+  } else {
+    sendBtn.addEventListener("click", handleSendMessage);
+    msgInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleSendMessage();
+    });
+  }
   await loadConversations();
 }
 
@@ -270,6 +363,7 @@ async function initProfile() {
 
   document.getElementById("profile-username").textContent = user.username;
   document.getElementById("profile-email").textContent = user.email;
+  document.getElementById("profile-verified").textContent = isVerified() ? "✅ Verified" : "❌ Not verified";
 
   try {
     const profile = await getUser(user.id);
@@ -367,7 +461,7 @@ async function initUsers() {
 
 // ── View another user's profile ──
 async function showUserProfile(userId) {
-  const container = document.getElementById("main-content");
+  const container = document.getElementById("page-content");
   container.innerHTML = "<p class='hint'>Loading profile...</p>";
 
   try {
@@ -437,7 +531,29 @@ function escapeHtml(str) {
 }
 
 // ── Init ──
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const verifyToken = params.get("verify");
+
+  if (verifyToken) {
+    try {
+      const result = await verifyEmail(verifyToken);
+      showVerifyMessage(result.message || "Email verified successfully!", true);
+      window.history.replaceState({}, document.title, "/");
+
+      // If already logged in, update stored user
+      const user = getStoredUser();
+      if (user) {
+        user.verified = true;
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+    } catch (err) {
+      showVerifyMessage(err.message || "Verification failed. The link may be expired.", false);
+      window.history.replaceState({}, document.title, "/");
+    }
+    return;
+  }
+
   if (isLoggedIn()) showApp();
   else showAuthPage();
 });

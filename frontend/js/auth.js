@@ -2,6 +2,11 @@ function isLoggedIn() {
   return !!localStorage.getItem("token");
 }
 
+function isVerified() {
+  const user = getStoredUser();
+  return user ? user.verified === true : false;
+}
+
 function requireAuth() {
   if (!isLoggedIn()) showAuthPage();
 }

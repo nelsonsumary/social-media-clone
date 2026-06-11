@@ -32,6 +32,12 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+app.get("/api/config", (req, res) => {
+  res.json({
+    googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  });
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });

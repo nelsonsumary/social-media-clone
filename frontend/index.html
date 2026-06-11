@@ -5,9 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SocialClone</title>
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://accounts.google.com/gsi/client" async></script>
 </head>
 <body>
   <div id="app"></div>
+
+  <!-- Template: Verification Message (overlay) -->
+  <template id="page-verify-message">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h1>Email Verification</h1>
+        <p id="verify-status" style="text-align:center;margin:20px 0"></p>
+        <button id="btn-verify-login" class="btn-full" style="display:none">Go to Login</button>
+      </div>
+    </div>
+  </template>
 
   <!-- Template: Auth -->
   <template id="page-auth">
@@ -31,6 +43,7 @@
           <button type="submit">Create Account</button>
           <p class="auth-error" id="signup-error"></p>
         </form>
+        <div id="google-button-container" class="google-btn-wrapper" style="margin-top:16px;display:flex;justify-content:center"></div>
       </div>
     </div>
   </template>
@@ -54,7 +67,11 @@
         </div>
       </nav>
       <main class="main-content" id="main-content">
-        <!-- Dynamic content here -->
+        <div id="verification-banner" class="verification-banner hidden">
+          Please verify your email to post and send messages.
+          <button id="btn-resend-verify" class="resend-btn">Resend email</button>
+        </div>
+        <div id="page-content"></div>
       </main>
     </div>
   </template>
@@ -63,7 +80,7 @@
   <template id="page-feed">
     <div class="feed-container">
       <h2>Feed</h2>
-      <div class="create-post">
+      <div class="create-post" id="create-post-area">
         <textarea id="post-content" rows="3" placeholder="What's on your mind?"></textarea>
         <div class="create-post-actions">
           <label class="btn-img">
@@ -73,6 +90,7 @@
           <button id="btn-post">Post</button>
         </div>
         <p class="upload-status" id="post-status"></p>
+        <p id="post-verify-warning" class="verify-warning hidden">Verify your email to create posts.</p>
       </div>
       <div id="feed-posts"></div>
     </div>
@@ -89,9 +107,10 @@
         <div class="message-view" id="message-view">
           <div class="message-header" id="message-header"></div>
           <div class="message-body" id="message-body"></div>
-          <div class="message-input-area">
+          <div class="message-input-area" id="message-input-area">
             <input type="text" id="message-input" placeholder="Type a message..." />
             <button id="btn-send-message">Send</button>
+            <p id="msg-verify-warning" class="verify-warning hidden">Verify your email to send messages.</p>
           </div>
         </div>
       </div>
@@ -109,6 +128,7 @@
         <p><strong>Username:</strong> <span id="profile-username"></span></p>
         <p><strong>Email:</strong> <span id="profile-email"></span></p>
         <p><strong>Bio:</strong> <span id="profile-bio"></span></p>
+        <p><strong>Status:</strong> <span id="profile-verified"></span></p>
         <div class="profile-stats">
           <span>Posts: <strong id="profile-post-count">0</strong></span>
           <span>Followers: <strong id="profile-follower-count">0</strong></span>
