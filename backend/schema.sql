@@ -1,6 +1,7 @@
 -- Run this SQL in your Supabase project's SQL Editor
 -- (https://supabase.com/dashboard/project/_/sql/new)
 
+-- 1. Create tables
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   username TEXT UNIQUE NOT NULL,
@@ -33,3 +34,20 @@ CREATE TABLE IF NOT EXISTS follows (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (follower_id, following_id)
 );
+
+-- 2. Conversations table for fast lookups
+CREATE TABLE IF NOT EXISTS conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  participant1 UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  participant2 UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  last_message TEXT DEFAULT NULL,
+  last_message_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(participant1, participant2),
+  CONSTRAINT chk_participants CHECK (participant1 < participant2)
+);
+
+-- 3. Index for fast conversation lookups
+CREATE INDEX IF NOT EXISTS idx_conversations_p1 ON conversations(participant1);
+CREATE INDEX IF NOT EXISTS idx_conversations_p2 ON conversations(participant2);
+CREATE INDEX IF NOT EXISTS idx_conversations_last_at ON conversations(last_message_at DESC);

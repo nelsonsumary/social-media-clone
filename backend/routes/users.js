@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { get, all, run } from "../database.js";
+import { supabase } from "../supabase.js";
 import { authenticateToken } from "../auth.js";
 
 const router = Router();
@@ -7,11 +7,15 @@ const router = Router();
 router.get("/search", authenticateToken, async (req, res) => {
   try {
     const query = req.query.q || "";
-    const users = await all(
-      "SELECT id, username, avatar, bio FROM users WHERE username LIKE $1 AND id != $2 LIMIT 20",
-      [`%${query}%`, req.userId]
-    );
-    res.json(users);
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, username, avatar, bio")
+      .ilike("username", `%${query}%`)
+      .neq("id", req.userId)
+      .limit(20);
+
+    if (error) throw error;
+    res.json(users || []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -19,15 +23,37 @@ router.get("/search", authenticateToken, async (req, res) => {
 
 router.get("/:userId", authenticateToken, async (req, res) => {
   try {
-    const user = await get("SELECT id, username, email, avatar, bio, created_at FROM users WHERE id = $1", [req.params.userId]);
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, username, email, avatar, bio, created_at")
+      .eq("id", req.params.userId)
+      .maybeSingle();
+
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const postCount = await get("SELECT COUNT(*) as count FROM posts WHERE user_id = $1", [req.params.userId]);
-    const followerCount = await get("SELECT COUNT(*) as count FROM follows WHERE following_id = $1", [req.params.userId]);
-    const followingCount = await get("SELECT COUNT(*) as count FROM follows WHERE follower_id = $1", [req.params.userId]);
-    const isFollowing = await get("SELECT 1 as ok FROM follows WHERE follower_id = $1 AND following_id = $2", [req.userId, req.params.userId]);
+    const { count: postCount } = await supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", req.params.userId);
 
-    res.json({ ...user, postCount: postCount.count, followerCount: followerCount.count, followingCount: followingCount.count, isFollowing: !!isFollowing });
+    const { count: followerCount } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", req.params.userId);
+
+    const { count: followingCount } = await supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("follower_id", req.params.userId);
+
+    const { data: isFollowing } = await supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", req.userId)
+      .eq("following_id", req.params.userId)
+      .maybeSingle();
+
+    res.json({ ...user, postCount, followerCount, followingCount, isFollowing: !!isFollowing });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -37,10 +63,15 @@ router.post("/:userId/follow", authenticateToken, async (req, res) => {
   try {
     if (req.userId === req.params.userId) return res.status(400).json({ error: "Cannot follow yourself" });
 
-    await run(
-      "INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-      [req.userId, req.params.userId]
-    );
+    const { error } = await supabase
+      .from("follows")
+      .insert({ follower_id: req.userId, following_id: req.params.userId });
+
+    if (error && error.code === "23505") {
+      return res.json({ message: "Already following" });
+    }
+    if (error) throw error;
+
     res.json({ message: "Followed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -49,7 +80,12 @@ router.post("/:userId/follow", authenticateToken, async (req, res) => {
 
 router.delete("/:userId/follow", authenticateToken, async (req, res) => {
   try {
-    await run("DELETE FROM follows WHERE follower_id = $1 AND following_id = $2", [req.userId, req.params.userId]);
+    await supabase
+      .from("follows")
+      .delete()
+      .eq("follower_id", req.userId)
+      .eq("following_id", req.params.userId);
+
     res.json({ message: "Unfollowed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -59,19 +95,27 @@ router.delete("/:userId/follow", authenticateToken, async (req, res) => {
 router.put("/profile", authenticateToken, async (req, res) => {
   try {
     const { bio, avatar } = req.body;
-    const updates = [];
-    const values = [];
-    let paramIndex = 1;
+    const updates = {};
+    if (bio !== undefined) updates.bio = bio;
+    if (avatar !== undefined) updates.avatar = avatar;
 
-    if (bio !== undefined) { updates.push(`bio = $${paramIndex++}`); values.push(bio); }
-    if (avatar !== undefined) { updates.push(`avatar = $${paramIndex++}`); values.push(avatar); }
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "Nothing to update" });
+    }
 
-    if (updates.length === 0) return res.status(400).json({ error: "Nothing to update" });
+    const { error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", req.userId);
 
-    values.push(req.userId);
-    await run(`UPDATE users SET ${updates.join(", ")} WHERE id = $${paramIndex}`, values);
+    if (error) throw error;
 
-    const user = await get("SELECT id, username, email, avatar, bio FROM users WHERE id = $1", [req.userId]);
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, username, email, avatar, bio")
+      .eq("id", req.userId)
+      .single();
+
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });

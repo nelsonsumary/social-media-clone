@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { v4 as uuidv4 } from "uuid";
-import { get, all, run } from "../database.js";
+import { supabase } from "../supabase.js";
 import { authenticateToken } from "../auth.js";
 
 const router = Router();
@@ -11,17 +11,25 @@ router.get("/", authenticateToken, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    const posts = await all(
-      `SELECT p.id, p.content, p.image, p.created_at,
-              u.id AS user_id, u.username, u.avatar
-       FROM posts p
-       JOIN users u ON p.user_id = u.id
-       ORDER BY p.created_at DESC
-       LIMIT $1 OFFSET $2`,
-      [limit, offset]
-    );
+    const { data: posts, error } = await supabase
+      .from("posts")
+      .select("id, content, image, created_at, user_id, users!inner(username, avatar)")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    res.json(posts);
+    if (error) throw error;
+
+    const flatPosts = (posts || []).map((p) => ({
+      id: p.id,
+      content: p.content,
+      image: p.image,
+      created_at: p.created_at,
+      user_id: p.user_id,
+      username: p.users.username,
+      avatar: p.users.avatar,
+    }));
+
+    res.json(flatPosts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -29,17 +37,25 @@ router.get("/", authenticateToken, async (req, res) => {
 
 router.get("/user/:userId", authenticateToken, async (req, res) => {
   try {
-    const posts = await all(
-      `SELECT p.id, p.content, p.image, p.created_at,
-              u.id AS user_id, u.username, u.avatar
-       FROM posts p
-       JOIN users u ON p.user_id = u.id
-       WHERE p.user_id = $1
-       ORDER BY p.created_at DESC`,
-      [req.params.userId]
-    );
+    const { data: posts, error } = await supabase
+      .from("posts")
+      .select("id, content, image, created_at, user_id, users!inner(username, avatar)")
+      .eq("user_id", req.params.userId)
+      .order("created_at", { ascending: false });
 
-    res.json(posts);
+    if (error) throw error;
+
+    const flatPosts = (posts || []).map((p) => ({
+      id: p.id,
+      content: p.content,
+      image: p.image,
+      created_at: p.created_at,
+      user_id: p.user_id,
+      username: p.users.username,
+      avatar: p.users.avatar,
+    }));
+
+    res.json(flatPosts);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -53,9 +69,18 @@ router.post("/", authenticateToken, async (req, res) => {
     }
 
     const id = uuidv4();
-    await run("INSERT INTO posts (id, user_id, content) VALUES ($1, $2, $3)", [id, req.userId, content.trim()]);
+    const { error: insertError } = await supabase
+      .from("posts")
+      .insert({ id, user_id: req.userId, content: content.trim() });
 
-    const post = await get("SELECT * FROM posts WHERE id = $1", [id]);
+    if (insertError) throw insertError;
+
+    const { data: post } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("id", id)
+      .single();
+
     res.status(201).json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -64,12 +89,75 @@ router.post("/", authenticateToken, async (req, res) => {
 
 router.post("/:id/image", authenticateToken, async (req, res) => {
   try {
-    const post = await get("SELECT * FROM posts WHERE id = $1 AND user_id = $2", [req.params.id, req.userId]);
+    const { data: post } = await supabase
+      .from("posts")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("user_id", req.userId)
+      .maybeSingle();
+
     if (!post) return res.status(404).json({ error: "Post not found or unauthorized" });
 
     const { imageUrl } = req.body;
-    await run("UPDATE posts SET image = $1 WHERE id = $2", [imageUrl, req.params.id]);
+    await supabase.from("posts").update({ image: imageUrl }).eq("id", req.params.id);
     res.json({ image: imageUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/:id", authenticateToken, async (req, res) => {
+  try {
+    const { data: post, error } = await supabase
+      .from("posts")
+      .select("id, content, image, created_at, user_id, users!inner(username, avatar)")
+      .eq("id", req.params.id)
+      .single();
+
+    if (error) return res.status(404).json({ error: "Post not found" });
+
+    res.json({
+      id: post.id,
+      content: post.content,
+      image: post.image,
+      created_at: post.created_at,
+      user_id: post.user_id,
+      username: post.users.username,
+      avatar: post.users.avatar,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/:id", authenticateToken, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Content is required" });
+    }
+
+    const { data: existing } = await supabase
+      .from("posts")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("user_id", req.userId)
+      .maybeSingle();
+
+    if (!existing) return res.status(404).json({ error: "Post not found or unauthorized" });
+
+    await supabase
+      .from("posts")
+      .update({ content: content.trim() })
+      .eq("id", req.params.id);
+
+    const { data: post } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+
+    res.json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -77,8 +165,16 @@ router.post("/:id/image", authenticateToken, async (req, res) => {
 
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
-    const result = await run("DELETE FROM posts WHERE id = $1 AND user_id = $2", [req.params.id, req.userId]);
-    if (result.changes === 0) return res.status(404).json({ error: "Post not found or unauthorized" });
+    const { data: post } = await supabase
+      .from("posts")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("user_id", req.userId)
+      .maybeSingle();
+
+    if (!post) return res.status(404).json({ error: "Post not found or unauthorized" });
+
+    await supabase.from("posts").delete().eq("id", req.params.id);
     res.json({ message: "Post deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

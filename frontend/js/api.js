@@ -48,6 +48,14 @@ function attachPostImage(postId, imageUrl) {
   return api(`/posts/${postId}/image`, { method: "POST", body: { imageUrl } });
 }
 
+function getPost(postId) {
+  return api(`/posts/${postId}`);
+}
+
+function updatePost(postId, content) {
+  return api(`/posts/${postId}`, { method: "PUT", body: { content } });
+}
+
 function deletePost(postId) {
   return api(`/posts/${postId}`, { method: "DELETE" });
 }
@@ -63,6 +71,14 @@ function getMessages(userId) {
 
 function sendMessage(userId, content) {
   return api(`/messages/${userId}`, { method: "POST", body: { content } });
+}
+
+function updateMessage(messageId, content) {
+  return api(`/messages/item/${messageId}`, { method: "PUT", body: { content } });
+}
+
+function deleteMessage(messageId) {
+  return api(`/messages/item/${messageId}`, { method: "DELETE" });
 }
 
 // Users
