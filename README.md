@@ -80,6 +80,20 @@ SQLite stores 4 tables:
 
 All foreign keys use `ON DELETE CASCADE` — deleting a user removes all their data.
 
+## Environment Variables
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+PORT=3000
+JWT_SECRET=your-secret-key-here
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | Port the server runs on |
+| `JWT_SECRET` | `change-this-secret-in-production` | Secret key used to sign JWT tokens |
+
 ## Running Locally
 
 ```bash
