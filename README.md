@@ -1,5 +1,7 @@
 # SocialClone - Social Media Web App
 
+**[Live Demo → https://social-media-clone-gpyn.onrender.com](https://social-media-clone-gpyn.onrender.com/)**
+
 A full-stack social media clone built with vanilla JavaScript, HTML, CSS, Node.js/Express, Supabase (PostgreSQL), and Supabase Storage.
 
 ## Features
