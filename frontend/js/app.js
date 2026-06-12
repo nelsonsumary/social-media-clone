@@ -43,6 +43,7 @@ async function initGoogleButton() {
     google.accounts.id.renderButton(container, {
       type: "standard",
       size: "large",
+      width: 400,
       theme: "outline",
       text: "sign_in_with",
     });
