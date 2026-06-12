@@ -686,15 +686,33 @@ input:disabled {
   box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
 }
 
+/* ── Divider ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: #bbb;
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e8e8e8;
+}
+
 /* Google button wrapper */
 .google-btn-wrapper {
-  margin-top: 16px;
   display: flex;
-  width: 100%;
+  justify-content: center;
 }
 
 .google-btn-wrapper > div {
   width: 100% !important;
+  max-width: 400px;
 }
 
 .google-btn-wrapper > div > iframe {
