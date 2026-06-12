@@ -690,14 +690,14 @@ input:disabled {
 .google-btn-wrapper {
   margin-top: 16px;
   display: flex;
-  justify-content: center;
+  width: 100%;
 }
 
 .google-btn-wrapper > div {
   width: 100% !important;
 }
 
-.google-btn-wrapper iframe {
+.google-btn-wrapper > div > iframe {
   width: 100% !important;
 }
 
