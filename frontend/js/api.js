@@ -119,6 +119,41 @@ function updateProfile(data) {
   return api("/users/profile", { method: "PUT", body: data });
 }
 
+// Likes
+function toggleLike(postId) {
+  return api(`/posts/${postId}/like`, { method: "POST" });
+}
+
+// Comments
+function getComments(postId) {
+  return api(`/posts/${postId}/comments`);
+}
+
+function addComment(postId, content) {
+  return api(`/posts/${postId}/comments`, { method: "POST", body: { content } });
+}
+
+function deleteComment(commentId) {
+  return api(`/posts/comments/${commentId}`, { method: "DELETE" });
+}
+
+// Notifications
+function getNotifications() {
+  return api("/notifications");
+}
+
+function getUnreadCount() {
+  return api("/notifications/unread-count");
+}
+
+function markNotificationRead(id) {
+  return api(`/notifications/read/${id}`, { method: "POST" });
+}
+
+function markAllNotificationsRead() {
+  return api("/notifications/read-all", { method: "POST" });
+}
+
 // Upload
 async function uploadImage(file) {
   const formData = new FormData();

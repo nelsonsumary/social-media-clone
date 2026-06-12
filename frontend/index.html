@@ -58,11 +58,20 @@
         <ul class="sidebar-nav">
           <li><button class="nav-btn active" data-view="feed">Feed</button></li>
           <li><button class="nav-btn" data-view="messages">Messages</button></li>
+          <li>
+            <button class="nav-btn" data-view="notifications">
+              Notifications
+              <span id="notif-badge" class="notif-badge hidden">0</span>
+            </button>
+          </li>
           <li><button class="nav-btn" data-view="profile">Profile</button></li>
           <li><button class="nav-btn" data-view="users">Find Users</button></li>
         </ul>
         <div class="sidebar-footer">
-          <span id="sidebar-username"></span>
+          <div class="sidebar-footer-top">
+            <span id="sidebar-username"></span>
+            <button id="btn-dark-mode" class="dark-mode-btn" title="Toggle dark mode">🌙</button>
+          </div>
           <button id="btn-logout">Logout</button>
         </div>
       </nav>
@@ -154,6 +163,19 @@
       <h2>Find Users</h2>
       <input type="text" id="user-search" placeholder="Search by username..." />
       <div id="user-results"></div>
+    </div>
+  </template>
+
+  <!-- Template: Notifications -->
+  <template id="page-notifications">
+    <div class="notifications-container">
+      <div class="notifications-header">
+        <h2>Notifications</h2>
+        <button id="btn-mark-all-read" class="mark-read-btn">Mark all as read</button>
+      </div>
+      <div id="notifications-list">
+        <p class="hint">Loading notifications...</p>
+      </div>
     </div>
   </template>
 

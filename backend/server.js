@@ -12,6 +12,9 @@ import postRoutes from "./routes/posts.js";
 import messageRoutes from "./routes/messages.js";
 import userRoutes from "./routes/users.js";
 import uploadRoutes from "./routes/upload.js";
+import likeRoutes from "./routes/likes.js";
+import commentRoutes from "./routes/comments.js";
+import notificationRoutes from "./routes/notifications.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +30,9 @@ app.use("/api/posts", postRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/posts", likeRoutes);
+app.use("/api/posts", commentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });

@@ -72,6 +72,12 @@ router.post("/:userId/follow", authenticateToken, async (req, res) => {
     }
     if (error) throw error;
 
+    await supabase.from("notifications").insert({
+      user_id: req.params.userId,
+      actor_id: req.userId,
+      type: "follow",
+    });
+
     res.json({ message: "Followed" });
   } catch (err) {
     res.status(500).json({ error: err.message });

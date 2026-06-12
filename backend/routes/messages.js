@@ -110,6 +110,12 @@ router.post("/:userId", authenticateToken, requireVerified, async (req, res) => 
 
     if (insertError) throw insertError;
 
+    await supabase.from("notifications").insert({
+      user_id: targetUserId,
+      actor_id: req.userId,
+      type: "message",
+    });
+
     const { data: message } = await supabase
       .from("messages")
       .select("*")

@@ -66,6 +66,7 @@ function showApp() {
   document.getElementById("sidebar-username").textContent = user?.username || "";
 
   updateVerificationBanner();
+  initDarkMode();
 
   $$(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -76,6 +77,7 @@ function showApp() {
   });
 
   document.getElementById("btn-logout").addEventListener("click", () => {
+    stopNotificationPolling();
     showAuthPage();
   });
 
@@ -92,6 +94,7 @@ function showApp() {
   }
 
   navigateTo("feed");
+  startNotificationPolling();
 }
 
 function updateVerificationBanner() {
@@ -115,6 +118,7 @@ function navigateTo(view) {
   else if (view === "messages") initMessages();
   else if (view === "profile") initProfile();
   else if (view === "users") initUsers();
+  else if (view === "notifications") initNotifications();
 }
 
 // ── Auth Listeners ──
@@ -215,7 +219,7 @@ function renderPosts(posts, container, showDelete = false) {
   container.innerHTML = posts
     .map(
       (p) => `
-      <div class="post-card">
+      <div class="post-card" data-postid="${p.id}">
         <div class="post-header">
           <img src="${p.avatar || ""}" class="post-avatar" onerror="this.src=''" />
           <a href="#" class="post-username" data-userid="${p.user_id}">${p.username}</a>
@@ -223,7 +227,23 @@ function renderPosts(posts, container, showDelete = false) {
         </div>
         <div class="post-content">${escapeHtml(p.content)}</div>
         ${p.image ? `<img src="${p.image}" class="post-image" />` : ""}
-        ${showDelete && p.user_id === (getStoredUser()?.id) ? `<button class="post-delete-btn" data-postid="${p.id}">Delete</button>` : ""}
+        <div class="post-actions">
+          <button class="post-like-btn ${p.isLiked ? "liked" : ""}" data-postid="${p.id}">
+            <span class="like-icon">${p.isLiked ? "❤️" : "♡"}</span>
+            <span class="like-count" data-count="${p.likeCount}">${p.likeCount}</span>
+          </button>
+          <button class="post-comment-toggle-btn" data-postid="${p.id}">
+            💬 <span class="comment-count">${p.commentCount}</span>
+          </button>
+          ${showDelete && p.user_id === (getStoredUser()?.id) ? `<button class="post-delete-btn" data-postid="${p.id}">Delete</button>` : ""}
+        </div>
+        <div class="post-comments-section hidden" data-postid="${p.id}">
+          <div class="comments-list" data-postid="${p.id}"></div>
+          <div class="comment-input-area">
+            <input type="text" class="comment-input" placeholder="Write a comment..." />
+            <button class="comment-submit-btn" data-postid="${p.id}">Post</button>
+          </div>
+        </div>
       </div>
     `
     )
@@ -247,6 +267,118 @@ function renderPosts(posts, container, showDelete = false) {
       showUserProfile(el.dataset.userid);
     });
   });
+
+  container.querySelectorAll(".post-like-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const postId = btn.dataset.postid;
+      btn.disabled = true;
+      try {
+        const result = await toggleLike(postId);
+        const icon = btn.querySelector(".like-icon");
+        const countEl = btn.querySelector(".like-count");
+        if (result.liked) {
+          btn.classList.add("liked");
+          icon.textContent = "❤️";
+          countEl.textContent = parseInt(countEl.dataset.count) + 1;
+          countEl.dataset.count = parseInt(countEl.dataset.count) + 1;
+        } else {
+          btn.classList.remove("liked");
+          icon.textContent = "♡";
+          countEl.textContent = Math.max(0, parseInt(countEl.dataset.count) - 1);
+          countEl.dataset.count = Math.max(0, parseInt(countEl.dataset.count) - 1);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      btn.disabled = false;
+    });
+  });
+
+  container.querySelectorAll(".post-comment-toggle-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const postId = btn.dataset.postid;
+      const section = container.querySelector(`.post-comments-section[data-postid="${postId}"]`);
+      if (!section) return;
+      section.classList.toggle("hidden");
+      if (!section.classList.contains("hidden") && !section.dataset.loaded) {
+        section.dataset.loaded = "true";
+        await loadComments(postId, section.querySelector(".comments-list"));
+      }
+    });
+  });
+
+  container.querySelectorAll(".comment-submit-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const postId = btn.dataset.postid;
+      const input = btn.closest(".comment-input-area").querySelector(".comment-input");
+      const content = input.value.trim();
+      if (!content) return;
+      input.disabled = true;
+      try {
+        await addComment(postId, content);
+        input.value = "";
+        const list = document.querySelector(`.comments-list[data-postid="${postId}"]`);
+        await loadComments(postId, list);
+        const countEl = document.querySelector(`.post-comment-toggle-btn[data-postid="${postId}"] .comment-count`);
+        if (countEl) countEl.textContent = parseInt(countEl.textContent) + 1;
+      } catch (err) {
+        alert(err.message);
+      }
+      input.disabled = false;
+    });
+  });
+
+  container.querySelectorAll(".comment-input").forEach((input) => {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const btn = input.closest(".comment-input-area").querySelector(".comment-submit-btn");
+        btn.click();
+      }
+    });
+  });
+}
+
+async function loadComments(postId, list) {
+  try {
+    const comments = await getComments(postId);
+    if (!comments.length) {
+      list.innerHTML = '<p class="hint" style="padding:8px 0">No comments yet</p>';
+      return;
+    }
+    const userId = getStoredUser()?.id;
+    list.innerHTML = comments
+      .map(
+        (c) => `
+        <div class="comment-item">
+          <a href="#" class="comment-username" data-userid="${c.user_id}">${c.username}</a>
+          <span class="comment-text">${escapeHtml(c.content)}</span>
+          ${c.user_id === userId ? `<button class="comment-delete-btn" data-commentid="${c.id}">×</button>` : ""}
+        </div>
+      `
+      )
+      .join("");
+
+    list.querySelectorAll(".comment-username").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        showUserProfile(el.dataset.userid);
+      });
+    });
+
+    list.querySelectorAll(".comment-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await deleteComment(btn.dataset.commentid);
+          btn.closest(".comment-item").remove();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    });
+  } catch {
+    list.innerHTML = '<p class="hint" style="padding:8px 0">Failed to load comments</p>';
+  }
 }
 
 // ── Messages ──
@@ -509,6 +641,123 @@ async function showUserProfile(userId) {
   } catch {
     container.innerHTML = '<p class="hint">User not found</p>';
   }
+}
+
+// ── Notifications ──
+async function initNotifications() {
+  const list = document.getElementById("notifications-list");
+  const markAllBtn = document.getElementById("btn-mark-all-read");
+
+  if (!markAllBtn.dataset.attached) {
+    markAllBtn.dataset.attached = "true";
+    markAllBtn.addEventListener("click", async () => {
+      try {
+        await markAllNotificationsRead();
+        initNotifications();
+        updateNotifBadge();
+      } catch {}
+    });
+  }
+
+  try {
+    const notifications = await getNotifications();
+    if (!notifications.length) {
+      list.innerHTML = '<p class="hint">No notifications yet</p>';
+      return;
+    }
+    list.innerHTML = notifications
+      .map(
+        (n) => `
+        <div class="notif-item ${n.read ? "" : "unread"}" data-notifid="${n.id}">
+          <div class="notif-content">
+            <a href="#" class="notif-actor" data-userid="${n.actor_id}">${n.username}</a>
+            ${notifText(n)}
+          </div>
+          <div class="notif-time">${formatTime(n.created_at)}</div>
+        </div>
+      `
+      )
+      .join("");
+
+    list.querySelectorAll(".notif-item").forEach((item) => {
+      item.addEventListener("click", async function () {
+        const id = this.dataset.notifid;
+        try {
+          await markNotificationRead(id);
+          this.classList.remove("unread");
+          updateNotifBadge();
+        } catch {}
+      });
+    });
+
+    list.querySelectorAll(".notif-actor").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        showUserProfile(el.dataset.userid);
+      });
+    });
+  } catch {
+    list.innerHTML = '<p class="hint">Failed to load notifications</p>';
+  }
+}
+
+function notifText(n) {
+  switch (n.type) {
+    case "like": return `liked your post`;
+    case "comment": return `commented on your post`;
+    case "follow": return `followed you`;
+    case "message": return `sent you a message`;
+    default: return `did something`;
+  }
+}
+
+// ── Dark Mode ──
+function initDarkMode() {
+  const btn = document.getElementById("btn-dark-mode");
+  if (!btn) return;
+
+  const saved = localStorage.getItem("darkMode");
+  if (saved === "true") {
+    document.documentElement.classList.add("dark");
+    btn.textContent = "☀️";
+  }
+
+  btn.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.toggle("dark");
+    localStorage.setItem("darkMode", isDark);
+    btn.textContent = isDark ? "☀️" : "🌙";
+  });
+}
+
+// ── Notification Polling ──
+let notifPollInterval = null;
+
+function startNotificationPolling() {
+  stopNotificationPolling();
+  updateNotifBadge();
+  notifPollInterval = setInterval(updateNotifBadge, 15000);
+}
+
+function stopNotificationPolling() {
+  if (notifPollInterval) {
+    clearInterval(notifPollInterval);
+    notifPollInterval = null;
+  }
+}
+
+async function updateNotifBadge() {
+  const badge = document.getElementById("notif-badge");
+  if (!badge) return;
+  try {
+    const data = await getUnreadCount();
+    if (data.count > 0) {
+      badge.textContent = data.count > 99 ? "99+" : data.count;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  } catch {}
 }
 
 // ── Helpers ──

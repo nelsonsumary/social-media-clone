@@ -30,6 +30,38 @@ router.get("/", authenticateToken, async (req, res) => {
       avatar: p.users.avatar,
     }));
 
+    const postIds = flatPosts.map((p) => p.id);
+
+    const { data: allLikes } = await supabase
+      .from("likes")
+      .select("post_id, user_id")
+      .in("post_id", postIds);
+
+    const { data: userLikes } = await supabase
+      .from("likes")
+      .select("post_id")
+      .in("post_id", postIds)
+      .eq("user_id", req.userId);
+
+    const { data: allComments } = await supabase
+      .from("comments")
+      .select("post_id")
+      .in("post_id", postIds);
+
+    const likeCounts = {};
+    (allLikes || []).forEach((l) => { likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1; });
+
+    const likedSet = new Set((userLikes || []).map((l) => l.post_id));
+
+    const commentCounts = {};
+    (allComments || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
+
+    flatPosts.forEach((p) => {
+      p.likeCount = likeCounts[p.id] || 0;
+      p.isLiked = likedSet.has(p.id);
+      p.commentCount = commentCounts[p.id] || 0;
+    });
+
     res.json(flatPosts);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -55,6 +87,38 @@ router.get("/user/:userId", authenticateToken, async (req, res) => {
       username: p.users.username,
       avatar: p.users.avatar,
     }));
+
+    const postIds = flatPosts.map((p) => p.id);
+
+    const { data: allLikes } = await supabase
+      .from("likes")
+      .select("post_id, user_id")
+      .in("post_id", postIds);
+
+    const { data: userLikes } = await supabase
+      .from("likes")
+      .select("post_id")
+      .in("post_id", postIds)
+      .eq("user_id", req.userId);
+
+    const { data: allComments } = await supabase
+      .from("comments")
+      .select("post_id")
+      .in("post_id", postIds);
+
+    const likeCounts = {};
+    (allLikes || []).forEach((l) => { likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1; });
+
+    const likedSet = new Set((userLikes || []).map((l) => l.post_id));
+
+    const commentCounts = {};
+    (allComments || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
+
+    flatPosts.forEach((p) => {
+      p.likeCount = likeCounts[p.id] || 0;
+      p.isLiked = likedSet.has(p.id);
+      p.commentCount = commentCounts[p.id] || 0;
+    });
 
     res.json(flatPosts);
   } catch (err) {
