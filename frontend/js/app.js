@@ -714,19 +714,19 @@ function notifText(n) {
 
 // ── Dark Mode ──
 function initDarkMode() {
-  const btn = document.getElementById("btn-dark-mode");
-  if (!btn) return;
+  const checkbox = document.getElementById("btn-dark-mode");
+  if (!checkbox) return;
 
   const saved = localStorage.getItem("darkMode");
   if (saved === "true") {
     document.documentElement.classList.add("dark");
-    btn.textContent = "☀️";
+    checkbox.checked = true;
   }
 
-  btn.addEventListener("click", () => {
-    const isDark = document.documentElement.classList.toggle("dark");
+  checkbox.addEventListener("change", () => {
+    const isDark = checkbox.checked;
+    document.documentElement.classList.toggle("dark", isDark);
     localStorage.setItem("darkMode", isDark);
-    btn.textContent = isDark ? "☀️" : "🌙";
   });
 }
 

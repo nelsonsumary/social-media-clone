@@ -1097,19 +1097,58 @@ html.dark .resend-btn {
   justify-content: space-between;
 }
 
-.dark-mode-btn {
-  padding: 6px 10px;
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.05);
-  cursor: pointer;
-  font-size: 16px;
-  transition: background 0.2s;
-  line-height: 1;
+.dark-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
 }
 
-.dark-mode-btn:hover {
-  background: rgba(255,255,255,0.12);
+.dark-mode-label {
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 22px;
+  transition: background 0.3s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #6c5ce7;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(18px);
 }
 
 html.dark .sidebar-footer-top span {
