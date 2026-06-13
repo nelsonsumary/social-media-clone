@@ -363,10 +363,10 @@ async function loadComments(postId, list) {
     list.innerHTML = comments
       .map(
         (c) => `
-        <div class="comment-item">
+        <div class="comment-item" data-commentid="${c.id}">
           <a href="#" class="comment-username" data-userid="${c.user_id}">${c.username}</a>
           <span class="comment-text">${escapeHtml(c.content)}</span>
-          ${c.user_id === userId ? `<button class="comment-delete-btn" data-commentid="${c.id}">×</button>` : ""}
+          ${c.user_id === userId ? `<button class="comment-edit-btn" data-commentid="${c.id}">✎</button><button class="comment-delete-btn" data-commentid="${c.id}">×</button>` : ""}
         </div>
       `
       )
@@ -376,6 +376,37 @@ async function loadComments(postId, list) {
       el.addEventListener("click", (e) => {
         e.preventDefault();
         showUserProfile(el.dataset.userid);
+      });
+    });
+
+    list.querySelectorAll(".comment-edit-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const item = btn.closest(".comment-item");
+        const textSpan = item.querySelector(".comment-text");
+        const currentText = textSpan.textContent;
+        textSpan.innerHTML = `<input type="text" class="comment-edit-input" value="${escapeHtml(currentText)}" />
+          <button class="comment-save-btn">Save</button>
+          <button class="comment-cancel-btn">Cancel</button>`;
+        const input = textSpan.querySelector(".comment-edit-input");
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+        textSpan.querySelector(".comment-save-btn").addEventListener("click", async () => {
+          const newContent = input.value.trim();
+          if (!newContent) return;
+          try {
+            await editComment(btn.dataset.commentid, newContent);
+            textSpan.textContent = newContent;
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+        textSpan.querySelector(".comment-cancel-btn").addEventListener("click", () => {
+          textSpan.textContent = currentText;
+        });
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") textSpan.querySelector(".comment-save-btn").click();
+          if (e.key === "Escape") textSpan.querySelector(".comment-cancel-btn").click();
+        });
       });
     });
 
