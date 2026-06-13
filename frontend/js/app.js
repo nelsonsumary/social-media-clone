@@ -148,12 +148,18 @@ function attachAuthListeners() {
   document.getElementById("form-login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
+    const btn = form.querySelector("button[type=submit]");
     const errEl = document.getElementById("login-error");
+    errEl.textContent = "";
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
     try {
       const data = await login(form.email.value, form.password.value);
       saveSession(data.token, data.user);
       showApp();
     } catch (err) {
+      btn.innerHTML = "Log In";
+      btn.disabled = false;
       errEl.textContent = err.message;
     }
   });
@@ -161,13 +167,19 @@ function attachAuthListeners() {
   document.getElementById("form-signup").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
+    const btn = form.querySelector("button[type=submit]");
     const errEl = document.getElementById("signup-error");
+    errEl.textContent = "";
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
     try {
       const data = await signup(form.username.value, form.email.value, form.password.value);
       saveSession(data.token, data.user);
       showApp();
       alert("A verification link has been sent to your email. Please check and click the link to activate your account.");
     } catch (err) {
+      btn.innerHTML = "Create Account";
+      btn.disabled = false;
       errEl.textContent = err.message;
     }
   });
