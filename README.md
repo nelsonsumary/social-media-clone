@@ -149,7 +149,7 @@ All foreign keys use `ON DELETE CASCADE` — deleting a user removes all their d
 
 ## Security Notes
 
-- Passwords are hashed with bcryptjs (10 rounds)
+- Passwords are hashed with bcryptjs (12 rounds)
 - JWT tokens expire after 7 days
 - File uploads are restricted to images only (max 5MB)
 - Account deletion cascades to all user data
