@@ -1384,19 +1384,20 @@ html.dark .bottom-nav {
 }
 
 #btn-logout-mobile {
-  padding: 6px 12px;
-  border: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 14px;
+  border: none;
   border-radius: 6px;
-  background: #0a1628;
+  background: linear-gradient(135deg, #6c5ce7, #fd79a8);
   cursor: pointer;
   color: #fff;
   font-size: 12px;
   font-weight: 600;
-  transition: background 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 #btn-logout-mobile:hover {
-  background: #0d1f3c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108,92,231,0.4);
 }
 
 html.dark #btn-logout-mobile {
