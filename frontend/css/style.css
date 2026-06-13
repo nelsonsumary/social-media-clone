@@ -1383,6 +1383,18 @@ html.dark .bottom-nav {
   gap: 12px;
 }
 
+.mobile-header .toggle-slider {
+  background: #d0d0d0;
+}
+
+.mobile-header .toggle-slider::before {
+  background: #fff;
+}
+
+html.dark .mobile-header .toggle-slider {
+  background: rgba(255,255,255,0.15);
+}
+
 #btn-logout-mobile {
   padding: 6px 14px;
   border: none;
