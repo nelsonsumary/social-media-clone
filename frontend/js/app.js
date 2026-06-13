@@ -919,7 +919,9 @@ async function updateNotifBadge() {
 // ── Helpers ──
 function formatTime(dateStr) {
   if (!dateStr) return "";
-  const d = new Date(dateStr + "Z");
+  const hasTz = /[+-]\d{2}:\d{2}$|Z$/i.test(dateStr);
+  const d = new Date(hasTz ? dateStr : dateStr + "Z");
+  if (isNaN(d.getTime())) return "";
   const now = new Date();
   const diff = (now - d) / 1000;
   if (diff < 60) return "just now";
