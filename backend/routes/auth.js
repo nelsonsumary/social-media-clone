@@ -84,21 +84,39 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email or username and password required" });
 
-    const identifier = email;
+    const identifier = email.trim();
 
     let { data: user, error } = await supabase
       .from("users")
       .select("*")
-      .or(`email.eq.${identifier},username.eq.${identifier}`)
+      .eq("email", identifier)
       .maybeSingle();
+
+    if (!user) {
+      const r = await supabase
+        .from("users")
+        .select("*")
+        .eq("username", identifier)
+        .maybeSingle();
+      user = r.data;
+      error = r.error;
+    }
 
     if (error && error.message?.includes("verified")) {
       const r = await supabase
         .from("users")
         .select("id, username, email, password, avatar, bio, created_at")
-        .or(`email.eq.${identifier},username.eq.${identifier}`)
+        .eq("email", identifier)
         .maybeSingle();
       user = r.data;
+      if (!user) {
+        const r2 = await supabase
+          .from("users")
+          .select("id, username, email, password, avatar, bio, created_at")
+          .eq("username", identifier)
+          .maybeSingle();
+        user = r2.data;
+      }
     }
 
     if (!user || !user.password || !bcrypt.compareSync(password, user.password)) {
