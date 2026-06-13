@@ -802,7 +802,7 @@ async function initNotifications() {
     list.innerHTML = notifications
       .map(
         (n) => `
-        <div class="notif-item ${n.read ? "" : "unread"}" data-notifid="${n.id}">
+        <div class="notif-item ${n.read ? "" : "unread"}" data-notifid="${n.id}" data-type="${n.type}" data-actorid="${n.actor_id}">
           <div class="notif-content">
             <a href="#" class="notif-actor" data-userid="${n.actor_id}">${n.username}</a>
             ${notifText(n)}
@@ -816,10 +816,19 @@ async function initNotifications() {
     list.querySelectorAll(".notif-item").forEach((item) => {
       item.addEventListener("click", async function () {
         const id = this.dataset.notifid;
+        const type = this.dataset.type;
+        const actorId = this.dataset.actorid;
         try {
           await markNotificationRead(id);
           this.classList.remove("unread");
           updateNotifBadge();
+          if (type === "message" && actorId) {
+            currentChatUserId = actorId;
+            $$(".nav-btn").forEach((b) => b.classList.remove("active"));
+            const msgBtn = document.querySelector('.nav-btn[data-view="messages"]');
+            if (msgBtn) msgBtn.classList.add("active");
+            navigateTo("messages");
+          }
         } catch {}
       });
     });
