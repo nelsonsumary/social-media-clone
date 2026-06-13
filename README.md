@@ -7,11 +7,15 @@ A full-stack social media clone built with vanilla JavaScript, HTML, CSS, Node.j
 ## Features
 
 - User signup, login, and account deletion
+- Google Sign-In
+- Email verification via Google Apps Script
 - Public posting with image uploads
-- Private messaging between users
+- Like and comment on posts
+- Private messaging between users (real-time via WebSocket)
 - User profiles with bios and avatars
 - Follow/unfollow other users
-- Real-time-like feed
+- Real-time notifications
+- Dark mode toggle
 
 ## Tech Stack
 
@@ -28,23 +32,29 @@ A full-stack social media clone built with vanilla JavaScript, HTML, CSS, Node.j
 ```
 social-media-clone/
 ├── backend/
-│   ├── server.js          # Express server entry point
+│   ├── server.js          # Express + HTTP server entry point
+│   ├── ws.js              # WebSocket server manager
 │   ├── database.js        # PostgreSQL connection via pg
 │   ├── supabase.js        # Supabase client initialization
 │   ├── auth.js            # JWT token generation & middleware
+│   ├── verify.js          # Email verification middleware
 │   ├── schema.sql         # PostgreSQL table definitions (run once)
+│   ├── google-apps-script.gs  # GAS source for email verification
 │   ├── routes/
-│   │   ├── auth.js        # POST /login, /signup, DELETE /account
+│   │   ├── auth.js        # Signup, login, Google OAuth, verify email
 │   │   ├── posts.js       # CRUD for posts
-│   │   ├── messages.js    # Private messaging
+│   │   ├── messages.js    # Private messaging with WebSocket push
 │   │   ├── users.js       # User search, profiles, follow
+│   │   ├── likes.js       # Like/unlike posts
+│   │   ├── comments.js    # CRUD for comments
+│   │   ├── notifications.js # Notifications
 │   │   └── upload.js      # Image upload to Supabase Storage
 │   └── uploads/           # (no longer used locally)
 ├── frontend/
 │   ├── index.html         # Main HTML with all page templates
 │   ├── css/style.css      # All styles
 │   └── js/
-│       ├── api.js         # API client functions
+│       ├── api.js         # API client + WebSocket functions
 │       ├── auth.js        # Session management helpers
 │       └── app.js         # Page routing & UI logic
 └── package.json
@@ -110,9 +120,7 @@ npm install
 npm start
 ```
 
-Then open `frontend/index.html` in your browser (or serve it with any static server).
-
-The backend runs on `http://localhost:3000`. Update `API_BASE` in `frontend/js/api.js` if needed.
+Then open `http://localhost:3000` in your browser. The backend serves the frontend automatically.
 
 ## How It Works (Step by Step)
 
@@ -136,14 +144,18 @@ The backend runs on `http://localhost:3000`. Update `API_BASE` in `frontend/js/a
 1. Frontend loads conversations via `GET /api/messages/conversations`
 2. Clicking a conversation loads messages via `GET /api/messages/:userId`
 3. Sending a message calls `POST /api/messages/:userId` with the message content
-4. Backend stores the message with sender and receiver IDs
+4. Backend stores the message and pushes it to the receiver in real-time via WebSocket
+5. The frontend receives the push and updates the message list instantly without reloading
 
 ### 4. Database Design
-PostgreSQL stores 4 tables (created by running `schema.sql`):
-- **users** - id (UUID), username, email, password (hashed), avatar, bio
+PostgreSQL stores 7 tables (created by running `schema.sql`):
+- **users** - id (UUID), username, email, password (hashed), avatar, bio, verified, google_id
 - **posts** - id (UUID), user_id (FK), content, image
 - **messages** - id (UUID), sender_id, receiver_id (FKs), content
-- **follows** - follower_id, following_id (composite PK, FKs)
+- **conversations** - id (UUID), participant1, participant2, last_message
+- **likes** - post_id, user_id (composite PK)
+- **comments** - id (UUID), post_id (FK), user_id (FK), content
+- **notifications** - id (UUID), user_id (FK), actor_id (FK), type, post_id, read
 
 All foreign keys use `ON DELETE CASCADE` — deleting a user removes all their data.
 
