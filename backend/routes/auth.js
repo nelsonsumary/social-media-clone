@@ -51,7 +51,7 @@ router.post("/signup", async (req, res) => {
     if (existing) return res.status(409).json({ error: "Username or email already exists" });
 
     const id = uuidv4();
-    const hashed = bcrypt.hashSync(password, 10);
+    const hashed = bcrypt.hashSync(password, 12);
     const verificationToken = crypto.randomBytes(32).toString("hex");
 
     const { error: insertError } = await supabase
