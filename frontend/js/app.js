@@ -274,19 +274,21 @@ function renderPosts(posts, container, showDelete = false) {
       const postId = btn.dataset.postid;
       btn.disabled = true;
       try {
-        const result = await toggleLike(postId);
         const icon = btn.querySelector(".like-icon");
         const countEl = btn.querySelector(".like-count");
-        if (result.liked) {
-          btn.classList.add("liked");
-          icon.textContent = "❤️";
-          countEl.textContent = parseInt(countEl.dataset.count) + 1;
-          countEl.dataset.count = parseInt(countEl.dataset.count) + 1;
-        } else {
+        const isLiked = btn.classList.contains("liked");
+        if (isLiked) {
+          await unlikePost(postId);
           btn.classList.remove("liked");
           icon.textContent = "♡";
           countEl.textContent = Math.max(0, parseInt(countEl.dataset.count) - 1);
           countEl.dataset.count = Math.max(0, parseInt(countEl.dataset.count) - 1);
+        } else {
+          await likePost(postId);
+          btn.classList.add("liked");
+          icon.textContent = "❤️";
+          countEl.textContent = parseInt(countEl.dataset.count) + 1;
+          countEl.dataset.count = parseInt(countEl.dataset.count) + 1;
         }
       } catch (err) {
         console.error(err);

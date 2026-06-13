@@ -84,6 +84,10 @@ JWT_SECRET=your-secret-key-here
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_SERVICE_KEY=your-service-role-key-here
 DATABASE_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+APP_URL=http://localhost:3000
+EMAIL_SERVICE_URL=https://script.google.com/macros/s/your-script-id/exec
 ```
 
 | Variable | Default | Description |
@@ -93,6 +97,10 @@ DATABASE_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:
 | `SUPABASE_URL` | — | Your Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | — | Your Supabase service_role key (for backend) |
 | `DATABASE_URL` | — | PostgreSQL connection string from Supabase |
+| `GOOGLE_CLIENT_ID` | — | Google OAuth client ID for Sign-In |
+| `GOOGLE_CLIENT_SECRET` | — | Google OAuth client secret |
+| `APP_URL` | `http://localhost:3000` | Public URL of your app (used for redirects) |
+| `EMAIL_SERVICE_URL` | — | Google Apps Script deployment URL for email verification |
 
 ### 5. Install & run
 

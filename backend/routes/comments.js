@@ -78,6 +78,46 @@ router.post("/:postId/comments", authenticateToken, async (req, res) => {
   }
 });
 
+router.put("/comments/:commentId", authenticateToken, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Comment content is required" });
+    }
+
+    const { data: existing } = await supabase
+      .from("comments")
+      .select("id, user_id")
+      .eq("id", req.params.commentId)
+      .maybeSingle();
+
+    if (!existing) return res.status(404).json({ error: "Comment not found" });
+    if (existing.user_id !== req.userId) return res.status(403).json({ error: "Cannot edit someone else's comment" });
+
+    await supabase
+      .from("comments")
+      .update({ content: content.trim() })
+      .eq("id", req.params.commentId);
+
+    const { data: comment } = await supabase
+      .from("comments")
+      .select("id, content, created_at, user_id, users!inner(username, avatar)")
+      .eq("id", req.params.commentId)
+      .single();
+
+    res.json({
+      id: comment.id,
+      content: comment.content,
+      created_at: comment.created_at,
+      user_id: comment.user_id,
+      username: comment.users.username,
+      avatar: comment.users.avatar,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete("/comments/:commentId", authenticateToken, async (req, res) => {
   try {
     const { data: existing } = await supabase

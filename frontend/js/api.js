@@ -120,8 +120,16 @@ function updateProfile(data) {
 }
 
 // Likes
-function toggleLike(postId) {
+function likePost(postId) {
   return api(`/posts/${postId}/like`, { method: "POST" });
+}
+
+function unlikePost(postId) {
+  return api(`/posts/${postId}/like`, { method: "DELETE" });
+}
+
+function getLikes(postId) {
+  return api(`/posts/${postId}/likes`);
 }
 
 // Comments
@@ -131,6 +139,10 @@ function getComments(postId) {
 
 function addComment(postId, content) {
   return api(`/posts/${postId}/comments`, { method: "POST", body: { content } });
+}
+
+function editComment(commentId, content) {
+  return api(`/posts/comments/${commentId}`, { method: "PUT", body: { content } });
 }
 
 function deleteComment(commentId) {
