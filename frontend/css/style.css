@@ -129,10 +129,10 @@ body {
   display: block;
   text-align: center;
   font-size: 13px;
-  color: #fff;
+  color: #000;
   text-decoration: none;
   margin-top: 6px;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .forgot-password-link:hover {
@@ -834,6 +834,10 @@ html.dark .message-input-area input {
   background: var(--input-bg);
   border-color: var(--border-color);
   color: var(--text-primary);
+}
+
+html.dark .forgot-password-link {
+  color: #fff;
 }
 
 html.dark .auth-form input:focus,
