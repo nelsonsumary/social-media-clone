@@ -172,3 +172,33 @@ async function uploadImage(file) {
   formData.append("image", file);
   return api("/upload", { method: "POST", body: formData });
 }
+
+// WebSocket
+let ws = null;
+const wsHandlers = {};
+
+function onWsMessage(type, handler) {
+  wsHandlers[type] = handler;
+}
+
+function connectWebSocket(userId) {
+  if (ws) ws.close();
+  const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(`${protocol}//${location.host}/?userId=${userId}`);
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const handler = wsHandlers[data.type];
+      if (handler) handler(data);
+    } catch {}
+  };
+
+  ws.onclose = () => {
+    setTimeout(() => connectWebSocket(userId), 3000);
+  };
+}
+
+function disconnectWebSocket() {
+  if (ws) { ws.close(); ws = null; }
+}

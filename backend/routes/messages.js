@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { supabase } from "../supabase.js";
 import { authenticateToken } from "../auth.js";
 import { requireVerified } from "../verify.js";
+import { sendToUser } from "../ws.js";
 
 const router = Router();
 
@@ -121,6 +122,8 @@ router.post("/:userId", authenticateToken, requireVerified, async (req, res) => 
       .select("*")
       .eq("id", id)
       .single();
+
+    sendToUser(targetUserId, { type: "new_message", message });
 
     res.status(201).json(message);
   } catch (err) {

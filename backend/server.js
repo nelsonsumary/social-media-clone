@@ -1,9 +1,11 @@
 import "dotenv/config";
 import express from "express";
+import http from "http";
 import cors from "cors";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import { getDb } from "./database.js";
+import { setupWebSocket } from "./ws.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -49,7 +51,9 @@ app.get("*", (req, res) => {
 });
 
 getDb().then(() => {
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  setupWebSocket(server);
+  server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }).catch((err) => {

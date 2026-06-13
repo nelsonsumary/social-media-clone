@@ -69,6 +69,15 @@ function showApp() {
   updateVerificationBanner();
   initDarkMode();
 
+  if (user) connectWebSocket(user.id);
+  onWsMessage("new_message", (data) => {
+    if (currentView === "messages") {
+      loadConversations();
+      if (currentChatUserId === data.message.sender_id) loadConversation(currentChatUserId);
+    }
+    updateNotifBadge();
+  });
+
   $$(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       $$(".nav-btn").forEach((b) => b.classList.remove("active"));
@@ -79,6 +88,7 @@ function showApp() {
 
   document.getElementById("btn-logout").addEventListener("click", () => {
     stopNotificationPolling();
+    disconnectWebSocket();
     showAuthPage();
   });
 
