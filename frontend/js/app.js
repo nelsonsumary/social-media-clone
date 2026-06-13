@@ -269,12 +269,10 @@ async function initFeed() {
   }
 
   const postBtn = document.getElementById("btn-post");
-  const warning = document.getElementById("post-verify-warning");
 
   if (!isVerified()) {
     postBtn.disabled = true;
     postBtn.title = "Verify your email to post";
-    warning.classList.remove("hidden");
   } else {
     postBtn.addEventListener("click", handleCreatePost);
   }
@@ -514,14 +512,12 @@ async function loadComments(postId, list) {
 async function initMessages() {
   const sendBtn = document.getElementById("btn-send-message");
   const msgInput = document.getElementById("message-input");
-  const warning = document.getElementById("msg-verify-warning");
 
   if (!isVerified()) {
     sendBtn.disabled = true;
     sendBtn.title = "Verify your email to send messages";
     msgInput.disabled = true;
     msgInput.placeholder = "Verify your email to send messages...";
-    warning.classList.remove("hidden");
   } else {
     sendBtn.addEventListener("click", handleSendMessage);
     msgInput.addEventListener("keydown", (e) => {

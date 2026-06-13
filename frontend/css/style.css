@@ -709,14 +709,6 @@ background: linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);  bor
   background: #6d5300;
 }
 
-/* Verify warning inline */
-.verify-warning {
-  color: #856404;
-  font-size: 13px;
-  margin-top: 8px;
-  text-align: center;
-}
-
 /* Disabled buttons */
 #btn-post:disabled,
 #btn-send-message:disabled,
@@ -1395,15 +1387,16 @@ html.dark .bottom-nav {
   padding: 6px 12px;
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
+  background: #0a1628;
   cursor: pointer;
-  color: #fd79a8;
+  color: #fff;
   font-size: 12px;
+  font-weight: 600;
   transition: background 0.2s;
 }
 
 #btn-logout-mobile:hover {
-  background: rgba(253,121,168,0.15);
+  background: #0d1f3c;
 }
 
 html.dark #btn-logout-mobile {
