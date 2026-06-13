@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS conversations (
 -- 3. Migration: add columns for email verification and Google OAuth (safe to run if table already exists)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT DEFAULT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT DEFAULT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE DEFAULT NULL;
 ALTER TABLE users ALTER COLUMN password DROP NOT NULL;
 

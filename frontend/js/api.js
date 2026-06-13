@@ -28,6 +28,14 @@ function login(email, password) {
   return api("/auth/login", { method: "POST", body: { email, password } });
 }
 
+function forgotPassword(email) {
+  return api("/auth/forgot-password", { method: "POST", body: { email } });
+}
+
+function resetPassword(token, password) {
+  return api("/auth/reset-password", { method: "POST", body: { token, password } });
+}
+
 function googleSignIn(credential) {
   return api("/auth/google", { method: "POST", body: { credential } });
 }

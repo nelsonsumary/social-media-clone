@@ -262,6 +262,73 @@ router.post("/resend-verification", authenticateToken, async (req, res) => {
   }
 });
 
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required" });
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (!user) return res.status(404).json({ error: "No account with that email" });
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    await supabase.from("users").update({ reset_token: resetToken }).eq("id", user.id);
+
+    const serviceUrl = process.env.EMAIL_SERVICE_URL;
+    const resetLink = `${process.env.APP_URL || "http://localhost:3000"}/?reset=${resetToken}`;
+
+    if (serviceUrl) {
+      try {
+        await fetch(serviceUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: user.email,
+            subject: "Reset your SocialClone password",
+            body: `You requested a password reset.\n\nClick the link to set a new password:\n\n${resetLink}\n\nIf you did not request this, ignore this email.`,
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to send reset email:", err.message);
+      }
+    }
+
+    res.json({ message: "If that email is registered, a reset link has been sent." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: "Token and password are required" });
+    if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id")
+      .eq("reset_token", token)
+      .maybeSingle();
+
+    if (!user) return res.status(400).json({ error: "Invalid or expired reset token" });
+
+    const hashed = bcrypt.hashSync(password, 12);
+    await supabase
+      .from("users")
+      .update({ password: hashed, reset_token: null })
+      .eq("id", user.id);
+
+    res.json({ message: "Password reset successfully. You can now log in." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     let { data: user, error } = await supabase

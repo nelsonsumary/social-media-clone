@@ -25,6 +25,60 @@ function showAuthPage() {
   initGoogleButton();
 }
 
+function showForgotPasswordPage() {
+  const tmpl = document.getElementById("page-forgot-password");
+  document.getElementById("app").innerHTML = tmpl.innerHTML;
+  document.getElementById("btn-back-to-login").addEventListener("click", (e) => {
+    e.preventDefault();
+    showAuthPage();
+  });
+  document.getElementById("form-forgot-password").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const errEl = document.getElementById("forgot-error");
+    errEl.textContent = "";
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
+    try {
+      const result = await forgotPassword(e.target.email.value);
+      document.getElementById("form-forgot-password").innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:20px 0">${result.message}</p>`;
+    } catch (err) {
+      btn.innerHTML = "Send Reset Link";
+      btn.disabled = false;
+      errEl.textContent = err.message;
+    }
+  });
+}
+
+function showResetPasswordPage(token) {
+  const tmpl = document.getElementById("page-reset-password");
+  document.getElementById("app").innerHTML = tmpl.innerHTML;
+  document.getElementById("form-reset-password").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const errEl = document.getElementById("reset-error");
+    errEl.textContent = "";
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
+    try {
+      const result = await resetPassword(token, e.target.password.value);
+      document.getElementById("form-reset-password").innerHTML = `<p style="text-align:center;color:var(--text-secondary);padding:20px 0">${result.message}</p><button class="btn-full" onclick="showAuthPage()">Go to Login</button>`;
+    } catch (err) {
+      btn.innerHTML = "Reset Password";
+      btn.disabled = false;
+      errEl.textContent = err.message;
+    }
+  });
+
+  const showPwCb = document.querySelector(".show-password");
+  if (showPwCb) {
+    showPwCb.addEventListener("change", () => {
+      const input = document.getElementById(showPwCb.dataset.target);
+      if (input) input.type = showPwCb.checked ? "text" : "password";
+    });
+  }
+}
+
 async function initGoogleButton() {
   const container = document.getElementById("google-button-container");
   if (!container) return;
@@ -183,6 +237,14 @@ function attachAuthListeners() {
       errEl.textContent = err.message;
     }
   });
+
+  const forgotLink = document.getElementById("btn-forgot-password");
+  if (forgotLink) {
+    forgotLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      showForgotPasswordPage();
+    });
+  }
 
   document.querySelectorAll(".show-password").forEach((cb) => {
     cb.addEventListener("change", () => {
@@ -846,6 +908,13 @@ function escapeHtml(str) {
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
   const verifyToken = params.get("verify");
+  const resetToken = params.get("reset");
+
+  if (resetToken) {
+    showResetPasswordPage(resetToken);
+    window.history.replaceState({}, document.title, "/");
+    return;
+  }
 
   if (verifyToken) {
     try {

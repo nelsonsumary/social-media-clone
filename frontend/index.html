@@ -36,6 +36,7 @@
           <label class="show-password-label"><input type="checkbox" class="show-password" data-target="login-password" /> Show password</label>
           <button type="submit">Log In</button>
           <p class="auth-error" id="login-error"></p>
+          <a href="#" id="btn-forgot-password" class="forgot-password-link">Forgot password?</a>
         </form>
         <form id="form-signup" class="auth-form hidden">
           <input type="text" name="username" placeholder="Username" required />
@@ -47,6 +48,38 @@
         </form>
         <div class="auth-divider">or</div>
         <div id="google-button-container" class="google-btn-wrapper"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Template: Forgot Password -->
+  <template id="page-forgot-password">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h1>Reset Password</h1>
+        <p style="text-align:center;color:var(--text-secondary);margin-bottom:16px">Enter your email and we'll send you a reset link.</p>
+        <form id="form-forgot-password" class="auth-form">
+          <input type="email" name="email" placeholder="Your email" required />
+          <button type="submit">Send Reset Link</button>
+          <p class="auth-error" id="forgot-error"></p>
+        </form>
+        <p style="text-align:center;margin-top:12px"><a href="#" id="btn-back-to-login" class="forgot-password-link">Back to Login</a></p>
+      </div>
+    </div>
+  </template>
+
+  <!-- Template: Reset Password (from email link) -->
+  <template id="page-reset-password">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h1>Set New Password</h1>
+        <p style="text-align:center;color:var(--text-secondary);margin-bottom:16px">Enter your new password below.</p>
+        <form id="form-reset-password" class="auth-form">
+          <input type="password" name="password" id="reset-password-input" placeholder="New password (min 6 chars)" minlength="6" required />
+          <label class="show-password-label"><input type="checkbox" class="show-password" data-target="reset-password-input" /> Show password</label>
+          <button type="submit">Reset Password</button>
+          <p class="auth-error" id="reset-error"></p>
+        </form>
       </div>
     </div>
   </template>
