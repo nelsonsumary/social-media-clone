@@ -19,8 +19,8 @@ router.get("/conversations", authenticateToken, async (req, res) => {
       .from("conversations")
       .select(`
         id, participant1, participant2, last_message, last_message_at,
-        users!conversations_participant1_fkey(id, username, avatar),
-        users!conversations_participant2_fkey(id, username, avatar)
+        users!participant1(id, username, avatar),
+        users!participant2(id, username, avatar)
       `)
       .or(`participant1.eq.${userId},participant2.eq.${userId}`)
       .order("last_message_at", { ascending: false, nullsFirst: false });

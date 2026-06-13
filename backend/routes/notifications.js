@@ -8,7 +8,7 @@ router.get("/", authenticateToken, async (req, res) => {
   try {
     const { data: notifications, error } = await supabase
       .from("notifications")
-      .select("id, type, post_id, read, created_at, actor_id, users!inner(username, avatar)")
+      .select("id, type, post_id, read, created_at, actor_id, users!actor_id(username, avatar)")
       .eq("user_id", req.userId)
       .order("created_at", { ascending: false })
       .limit(50);
