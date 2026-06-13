@@ -82,26 +82,27 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+    if (!email || !password) return res.status(400).json({ error: "Email or username and password required" });
+
+    const identifier = email;
 
     let { data: user, error } = await supabase
       .from("users")
       .select("*")
-      .eq("email", email)
+      .or(`email.eq.${identifier},username.eq.${identifier}`)
       .maybeSingle();
 
-    // Fallback if verified column doesn't exist (pre-migration)
     if (error && error.message?.includes("verified")) {
       const r = await supabase
         .from("users")
         .select("id, username, email, password, avatar, bio, created_at")
-        .eq("email", email)
+        .or(`email.eq.${identifier},username.eq.${identifier}`)
         .maybeSingle();
       user = r.data;
     }
 
     if (!user || !user.password || !bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "Invalid email/username or password" });
     }
 
     const token = generateToken(user.id);
