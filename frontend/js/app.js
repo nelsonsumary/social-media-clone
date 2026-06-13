@@ -140,11 +140,15 @@ function showApp() {
     });
   });
 
-  document.getElementById("btn-logout").addEventListener("click", () => {
+  function handleLogout() {
     stopNotificationPolling();
     disconnectWebSocket();
     showAuthPage();
-  });
+  }
+
+  document.getElementById("btn-logout").addEventListener("click", handleLogout);
+  const logoutMobile = document.getElementById("btn-logout-mobile");
+  if (logoutMobile) logoutMobile.addEventListener("click", handleLogout);
 
   const resendBtn = document.getElementById("btn-resend-verify");
   if (resendBtn) {
@@ -579,7 +583,16 @@ async function loadConversation(userId) {
       userName = u.username;
     } catch {}
 
-    header.textContent = `Chat with ${userName}`;
+    document.querySelector(".messages-layout")?.classList.add("chat-active");
+    header.innerHTML = `<button class="msg-back-btn" id="msg-back-btn">&larr;</button> Chat with ${userName}`;
+    const backBtn = document.getElementById("msg-back-btn");
+    if (backBtn) {
+      backBtn.addEventListener("click", () => {
+        currentChatUserId = null;
+        document.querySelector(".messages-layout")?.classList.remove("chat-active");
+        initMessages();
+      });
+    }
 
     body.innerHTML = msgs
       .map(
@@ -840,19 +853,29 @@ function notifText(n) {
 // ── Dark Mode ──
 function initDarkMode() {
   const checkbox = document.getElementById("btn-dark-mode");
-  if (!checkbox) return;
+  const checkboxMobile = document.getElementById("btn-dark-mode-mobile");
 
   const saved = localStorage.getItem("darkMode");
   if (saved === "true") {
     document.documentElement.classList.add("dark");
-    checkbox.checked = true;
+    if (checkbox) checkbox.checked = true;
+    if (checkboxMobile) checkboxMobile.checked = true;
   }
 
-  checkbox.addEventListener("change", () => {
-    const isDark = checkbox.checked;
+  function syncDark(checked) {
+    const isDark = checked;
     document.documentElement.classList.toggle("dark", isDark);
     localStorage.setItem("darkMode", isDark);
-  });
+    if (checkbox) checkbox.checked = isDark;
+    if (checkboxMobile) checkboxMobile.checked = isDark;
+  }
+
+  if (checkbox) {
+    checkbox.addEventListener("change", () => syncDark(checkbox.checked));
+  }
+  if (checkboxMobile) {
+    checkboxMobile.addEventListener("change", () => syncDark(checkboxMobile.checked));
+  }
 }
 
 // ── Notification Polling ──
@@ -873,14 +896,26 @@ function stopNotificationPolling() {
 
 async function updateNotifBadge() {
   const badge = document.getElementById("notif-badge");
-  if (!badge) return;
+  const badgeMobile = document.getElementById("notif-badge-mobile");
   try {
     const data = await getUnreadCount();
-    if (data.count > 0) {
-      badge.textContent = data.count > 99 ? "99+" : data.count;
-      badge.classList.remove("hidden");
-    } else {
-      badge.classList.add("hidden");
+    const show = data.count > 0;
+    const text = data.count > 99 ? "99+" : data.count;
+    if (badge) {
+      if (show) {
+        badge.textContent = text;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
+    if (badgeMobile) {
+      if (show) {
+        badgeMobile.textContent = text;
+        badgeMobile.classList.remove("hidden");
+      } else {
+        badgeMobile.classList.add("hidden");
+      }
     }
   } catch {}
 }

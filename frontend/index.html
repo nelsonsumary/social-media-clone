@@ -118,6 +118,16 @@
         </div>
       </nav>
       <main class="main-content" id="main-content">
+        <div class="mobile-header" id="mobile-header">
+          <h2>SocialClone</h2>
+          <div class="mobile-header-actions">
+            <label class="toggle-switch">
+              <input type="checkbox" id="btn-dark-mode-mobile" />
+              <span class="toggle-slider"></span>
+            </label>
+            <button id="btn-logout-mobile">Logout</button>
+          </div>
+        </div>
         <div id="verification-banner" class="verification-banner hidden">
           Please verify your email to post and send messages.
           <button id="btn-resend-verify" class="resend-btn">Resend email</button>
@@ -125,6 +135,29 @@
         <div id="page-content"></div>
       </main>
     </div>
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-btn active" data-view="feed">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Feed</span>
+      </button>
+      <button class="nav-btn" data-view="messages">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">Chat</span>
+      </button>
+      <button class="nav-btn" data-view="notifications">
+        <span class="nav-icon">🔔</span>
+        <span class="nav-label">Alerts</span>
+        <span id="notif-badge-mobile" class="notif-badge hidden">0</span>
+      </button>
+      <button class="nav-btn" data-view="profile">
+        <span class="nav-icon">👤</span>
+        <span class="nav-label">Profile</span>
+      </button>
+      <button class="nav-btn" data-view="users">
+        <span class="nav-icon">🔍</span>
+        <span class="nav-label">Find</span>
+      </button>
+    </nav>
   </template>
 
   <!-- Template: Feed -->
