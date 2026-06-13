@@ -129,12 +129,14 @@ body {
   display: block;
   text-align: center;
   font-size: 13px;
-  color: var(--link-color);
+  color: #fff;
   text-decoration: none;
-  margin-top: 8px;
+  margin-top: 6px;
+  opacity: 0.8;
 }
 
 .forgot-password-link:hover {
+  opacity: 1;
   text-decoration: underline;
 }
 
