@@ -171,6 +171,13 @@ function attachAuthListeners() {
       errEl.textContent = err.message;
     }
   });
+
+  document.querySelectorAll(".show-password").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const input = document.getElementById(cb.dataset.target);
+      if (input) input.type = cb.checked ? "text" : "password";
+    });
+  });
 }
 
 // ── Feed ──

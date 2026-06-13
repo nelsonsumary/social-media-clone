@@ -32,14 +32,16 @@
         </div>
         <form id="form-login" class="auth-form">
           <input type="email" name="email" placeholder="Email" required />
-          <input type="password" name="password" placeholder="Password" required />
+          <input type="password" name="password" id="login-password" placeholder="Password" required />
+          <label class="show-password-label"><input type="checkbox" class="show-password" data-target="login-password" /> Show password</label>
           <button type="submit">Log In</button>
           <p class="auth-error" id="login-error"></p>
         </form>
         <form id="form-signup" class="auth-form hidden">
           <input type="text" name="username" placeholder="Username" required />
           <input type="email" name="email" placeholder="Email" required />
-          <input type="password" name="password" placeholder="Password (min 6 chars)" minlength="6" required />
+          <input type="password" name="password" id="signup-password" placeholder="Password (min 6 chars)" minlength="6" required />
+          <label class="show-password-label"><input type="checkbox" class="show-password" data-target="signup-password" /> Show password</label>
           <button type="submit">Create Account</button>
           <p class="auth-error" id="signup-error"></p>
         </form>
