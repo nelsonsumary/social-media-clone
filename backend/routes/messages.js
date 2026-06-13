@@ -17,27 +17,28 @@ router.get("/conversations", authenticateToken, async (req, res) => {
 
     const { data: convos, error } = await supabase
       .from("conversations")
-      .select(`
-        id, participant1, participant2, last_message, last_message_at,
-        users!participant1(id, username, avatar),
-        users!participant2(id, username, avatar)
-      `)
+      .select("id, participant1, participant2, last_message, last_message_at")
       .or(`participant1.eq.${userId},participant2.eq.${userId}`)
-      .order("last_message_at", { ascending: false, nullsFirst: false });
+      .order("last_message_at", { ascending: false });
 
     if (error) throw error;
 
-    const result = (convos || []).map((c) => {
-      const isP1 = c.participant1 === userId;
-      const otherUser = isP1 ? c.users_conversations_participant2_fkey : c.users_conversations_participant1_fkey;
-      return {
-        id: otherUser.id,
-        username: otherUser.username,
-        avatar: otherUser.avatar,
+    const result = [];
+    for (const c of convos || []) {
+      const otherUserId = c.participant1 === userId ? c.participant2 : c.participant1;
+      const { data: otherUser } = await supabase
+        .from("users")
+        .select("id, username, avatar")
+        .eq("id", otherUserId)
+        .maybeSingle();
+      result.push({
+        id: otherUserId,
+        username: otherUser?.username || "Unknown",
+        avatar: otherUser?.avatar || null,
         last_message: c.last_message,
         last_message_time: c.last_message_at,
-      };
-    });
+      });
+    }
 
     res.json(result);
   } catch (err) {

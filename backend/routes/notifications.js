@@ -8,25 +8,33 @@ router.get("/", authenticateToken, async (req, res) => {
   try {
     const { data: notifications, error } = await supabase
       .from("notifications")
-      .select("id, type, post_id, read, created_at, actor_id, users!actor_id(username, avatar)")
+      .select("id, type, post_id, read, created_at, actor_id")
       .eq("user_id", req.userId)
       .order("created_at", { ascending: false })
       .limit(50);
 
     if (error) throw error;
 
-    const flat = (notifications || []).map((n) => ({
-      id: n.id,
-      type: n.type,
-      post_id: n.post_id,
-      read: n.read,
-      created_at: n.created_at,
-      actor_id: n.actor_id,
-      username: n.users.username,
-      avatar: n.users.avatar,
-    }));
+    const result = [];
+    for (const n of notifications || []) {
+      const { data: actor } = await supabase
+        .from("users")
+        .select("username, avatar")
+        .eq("id", n.actor_id)
+        .maybeSingle();
+      result.push({
+        id: n.id,
+        type: n.type,
+        post_id: n.post_id,
+        read: n.read,
+        created_at: n.created_at,
+        actor_id: n.actor_id,
+        username: actor?.username || "Unknown",
+        avatar: actor?.avatar || null,
+      });
+    }
 
-    res.json(flat);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
