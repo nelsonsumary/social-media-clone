@@ -7,7 +7,7 @@ A full-stack social media clone built with vanilla JavaScript, HTML, CSS, Node.j
 ## Features
 
 - User signup, login, and account deletion
-- Google Sign-In
+- Social login (Google, Facebook, LinkedIn, X/Twitter, TikTok, Spotify)
 - Email verification via Google Apps Script
 - Public posting with image uploads
 - Like and comment on posts
@@ -49,6 +49,7 @@ social-media-clone/
 │   │   ├── likes.js       # Like/unlike posts
 │   │   ├── comments.js    # CRUD for comments
 │   │   ├── notifications.js # Notifications
+│   │   ├── oauth.js       # OAuth for Facebook, LinkedIn, Twitter, TikTok, Spotify
 │   │   └── upload.js      # Image upload to Supabase Storage
 │   └── uploads/           # (no longer used locally)
 ├── frontend/
@@ -99,6 +100,17 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 APP_URL=http://localhost:3000
 EMAIL_SERVICE_URL=https://script.google.com/macros/s/your-script-id/exec
+EMAIL_TOKEN=sk-socialclone-secret-2025
+FACEBOOK_CLIENT_ID=your-facebook-app-id
+FACEBOOK_CLIENT_SECRET=your-facebook-app-secret
+LINKEDIN_CLIENT_ID=your-linkedin-client-id
+LINKEDIN_CLIENT_SECRET=your-linkedin-client-secret
+TWITTER_CLIENT_ID=your-twitter-client-id
+TWITTER_CLIENT_SECRET=your-twitter-client-secret
+TIKTOK_CLIENT_ID=your-tiktok-client-key
+TIKTOK_CLIENT_SECRET=your-tiktok-client-secret
+SPOTIFY_CLIENT_ID=your-spotify-client-id
+SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
 ```
 
 | Variable | Default | Description |
@@ -112,6 +124,17 @@ EMAIL_SERVICE_URL=https://script.google.com/macros/s/your-script-id/exec
 | `GOOGLE_CLIENT_SECRET` | — | Google OAuth client secret |
 | `APP_URL` | `http://localhost:3000` | Public URL of your app (used for redirects) |
 | `EMAIL_SERVICE_URL` | — | Google Apps Script deployment URL for email verification |
+| `EMAIL_TOKEN` | — | Secret token for email service authentication |
+| `FACEBOOK_CLIENT_ID` | — | Facebook App ID for Facebook Sign-In |
+| `FACEBOOK_CLIENT_SECRET` | — | Facebook App Secret |
+| `LINKEDIN_CLIENT_ID` | — | LinkedIn OAuth client ID |
+| `LINKEDIN_CLIENT_SECRET` | — | LinkedIn OAuth client secret |
+| `TWITTER_CLIENT_ID` | — | Twitter/X OAuth 2.0 client ID |
+| `TWITTER_CLIENT_SECRET` | — | Twitter/X OAuth client secret |
+| `TIKTOK_CLIENT_ID` | — | TikTok client key |
+| `TIKTOK_CLIENT_SECRET` | — | TikTok client secret |
+| `SPOTIFY_CLIENT_ID` | — | Spotify OAuth client ID |
+| `SPOTIFY_CLIENT_SECRET` | — | Spotify OAuth client secret |
 
 ### 5. Install & run
 

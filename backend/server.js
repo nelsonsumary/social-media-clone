@@ -17,6 +17,7 @@ import uploadRoutes from "./routes/upload.js";
 import likeRoutes from "./routes/likes.js";
 import commentRoutes from "./routes/comments.js";
 import notificationRoutes from "./routes/notifications.js";
+import oauthRoutes from "./routes/oauth.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +36,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/posts", likeRoutes);
 app.use("/api/posts", commentRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/oauth", oauthRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
@@ -43,6 +45,7 @@ app.get("/api/health", (req, res) => {
 app.get("/api/config", (req, res) => {
   res.json({
     googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+    facebookClientId: process.env.FACEBOOK_CLIENT_ID || "",
   });
 });
 

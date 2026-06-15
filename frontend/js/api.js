@@ -202,6 +202,22 @@ async function uploadImage(file) {
   return api("/upload", { method: "POST", body: formData });
 }
 
+// OAuth
+function facebookSignIn(accessToken) {
+  return api("/oauth/facebook", { method: "POST", body: { accessToken } });
+}
+
+function getOAuthUrl(provider) {
+  return api(`/oauth/${provider}/url`);
+}
+
+function completeOAuth(provider, code, state, codeVerifier) {
+  return api(`/oauth/${provider}/callback`, {
+    method: "POST",
+    body: { code, state, code_verifier: codeVerifier },
+  });
+}
+
 // WebSocket
 let ws = null;
 const wsHandlers = {};

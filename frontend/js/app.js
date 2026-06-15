@@ -296,6 +296,65 @@ function attachAuthListeners() {
       if (input) input.type = cb.checked ? "text" : "password";
     });
   });
+
+  // OAuth buttons
+  document.querySelectorAll(".oauth-btn[data-provider]").forEach((btn) => {
+    btn.addEventListener("click", () => handleOAuthClick(btn.dataset.provider));
+  });
+}
+
+async function handleOAuthClick(provider) {
+  if (provider === "facebook") {
+    return handleFacebookSignIn();
+  }
+  // Redirect-based providers
+  try {
+    const { url, state, code_verifier } = await getOAuthUrl(provider);
+    sessionStorage.setItem("oauth_state", state);
+    if (code_verifier) sessionStorage.setItem("oauth_code_verifier", code_verifier);
+    sessionStorage.setItem("oauth_provider", provider);
+    window.location.href = url;
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function handleFacebookSignIn() {
+  try {
+    const config = await getConfig();
+    if (!config.facebookClientId) {
+      alert("Facebook sign-in is not configured");
+      return;
+    }
+    await loadFacebookSDK(config.facebookClientId);
+    const response = await new Promise((resolve, reject) => {
+      FB.login(resolve, { scope: "email,public_profile" });
+    });
+    if (response.status !== "connected") {
+      return alert("Facebook sign-in was cancelled");
+    }
+    const data = await facebookSignIn(response.authResponse.accessToken);
+    saveSession(data.token, data.user);
+    showApp();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function loadFacebookSDK(appId) {
+  return new Promise((resolve) => {
+    if (window.FB) return resolve();
+    window.fbAsyncInit = () => {
+      FB.init({ appId, cookie: true, xfbml: true, version: "v18.0" });
+      resolve();
+    };
+    if (!document.getElementById("facebook-jssdk")) {
+      const js = document.createElement("script");
+      js.id = "facebook-jssdk";
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      document.body.appendChild(js);
+    }
+  });
 }
 
 // ── Feed ──
@@ -1101,6 +1160,40 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       showVerifyMessage(err.message || "Verification failed. The link may be expired.", false);
       window.history.replaceState({}, document.title, "/");
+    }
+    return;
+  }
+
+  const oauthProvider = params.get("oauth");
+  const oauthCode = params.get("code");
+  const oauthState = params.get("state");
+
+  if (oauthProvider && oauthCode && oauthState) {
+    const storedState = sessionStorage.getItem("oauth_state");
+    const codeVerifier = sessionStorage.getItem("oauth_code_verifier");
+
+    if (oauthState !== storedState) {
+      showAuthPage();
+      window.history.replaceState({}, document.title, "/");
+      return;
+    }
+
+    sessionStorage.removeItem("oauth_state");
+    sessionStorage.removeItem("oauth_code_verifier");
+    sessionStorage.removeItem("oauth_provider");
+
+    const authContainer = document.getElementById("app");
+    authContainer.innerHTML = '<div class="auth-container"><div class="auth-card"><p style="text-align:center">Completing sign in...</p></div></div>';
+
+    try {
+      const data = await completeOAuth(oauthProvider, oauthCode, oauthState, codeVerifier);
+      saveSession(data.token, data.user);
+      window.history.replaceState({}, document.title, "/");
+      showApp();
+    } catch (err) {
+      showAuthPage();
+      window.history.replaceState({}, document.title, "/");
+      setTimeout(() => alert(err.message), 100);
     }
     return;
   }

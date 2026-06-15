@@ -770,6 +770,55 @@ input:disabled {
   width: 100% !important;
 }
 
+/* ── OAuth Buttons ── */
+.oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.oauth-label {
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.oauth-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.oauth-facebook { background: #1877F2; }
+.oauth-facebook:hover { background: #166fe5; }
+.oauth-linkedin { background: #0A66C2; }
+.oauth-linkedin:hover { background: #0957a8; }
+.oauth-twitter { background: #000; }
+.oauth-twitter:hover { background: #1a1a1a; }
+.oauth-tiktok { background: #111; }
+.oauth-tiktok:hover { background: #222; }
+.oauth-spotify { background: #1DB954; }
+.oauth-spotify:hover { background: #1aa34a; }
+
+html.dark .oauth-label { color: #777; }
+
 /* ── Dark Mode ── */
 :root {
   --bg-primary: #f5f6fa;
