@@ -9,10 +9,18 @@
  *   5. Copy the web app URL and set it as EMAIL_SERVICE_URL in backend/.env
  */
 
+const EXPECTED_TOKEN = "sk-socialclone-secret-2025";
+
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const { to, subject, body } = data;
+    const { to, subject, body, token } = data;
+
+    if (token !== EXPECTED_TOKEN) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ error: "Unauthorized" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     if (!to || !subject || !body) {
       return ContentService

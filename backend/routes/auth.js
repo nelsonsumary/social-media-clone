@@ -11,6 +11,7 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 async function sendVerificationEmail(email, token) {
   const serviceUrl = process.env.EMAIL_SERVICE_URL;
+  const emailToken = process.env.EMAIL_TOKEN;
   if (!serviceUrl) {
     console.warn("EMAIL_SERVICE_URL not set — skipping verification email. User will remain unverified.");
     return;
@@ -26,6 +27,7 @@ async function sendVerificationEmail(email, token) {
         to: email,
         subject: "Verify your SocialClone account",
         body: `Welcome to SocialClone!\n\nPlease verify your email by clicking the link below:\n\n${verifyLink}\n\nIf you did not sign up, please ignore this email.`,
+        token: emailToken,
       }),
     });
     const data = await res.json();
@@ -279,6 +281,7 @@ router.post("/forgot-password", async (req, res) => {
     await supabase.from("users").update({ reset_token: resetToken }).eq("id", user.id);
 
     const serviceUrl = process.env.EMAIL_SERVICE_URL;
+    const emailToken = process.env.EMAIL_TOKEN;
     const resetLink = `${process.env.APP_URL || "http://localhost:3000"}/?reset=${resetToken}`;
 
     if (serviceUrl) {
@@ -290,6 +293,7 @@ router.post("/forgot-password", async (req, res) => {
             to: user.email,
             subject: "Reset your SocialClone password",
             body: `You requested a password reset.\n\nClick the link to set a new password:\n\n${resetLink}\n\nIf you did not request this, ignore this email.`,
+            token: emailToken,
           }),
         });
       } catch (err) {
