@@ -1,10 +1,13 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { OAuth2Client } from "google-auth-library";
+import speakeasy from "speakeasy";
+import QRCode from "qrcode";
 import { supabase } from "../supabase.js";
-import { generateToken, authenticateToken } from "../auth.js";
+import { generateToken, generateTempToken, authenticateToken } from "../auth.js";
 
 const router = Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -125,6 +128,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email/username or password" });
     }
 
+    if (user.totp_enabled) {
+      const tempToken = generateTempToken(user.id);
+      return res.json({ requires_2fa: true, temp_token: tempToken });
+    }
+
     const token = generateToken(user.id);
     res.json({
       token,
@@ -176,6 +184,11 @@ router.post("/google", async (req, res) => {
         } catch {
           // Column doesn't exist yet — ignore
         }
+      }
+
+      if (user.totp_enabled) {
+        const tempToken = generateTempToken(user.id);
+        return res.json({ requires_2fa: true, temp_token: tempToken });
       }
 
       const token = generateToken(user.id);
@@ -337,7 +350,7 @@ router.get("/me", authenticateToken, async (req, res) => {
   try {
     let { data: user, error } = await supabase
       .from("users")
-      .select("id, username, email, avatar, bio, verified, created_at")
+      .select("id, username, email, avatar, bio, verified, totp_enabled, created_at")
       .eq("id", req.userId)
       .maybeSingle();
 
@@ -345,7 +358,7 @@ router.get("/me", authenticateToken, async (req, res) => {
     if (error && error.message?.includes("verified")) {
       const r = await supabase
         .from("users")
-        .select("id, username, email, avatar, bio, created_at")
+        .select("id, username, email, avatar, bio, totp_enabled, created_at")
         .eq("id", req.userId)
         .maybeSingle();
       user = r.data;
@@ -365,6 +378,153 @@ router.delete("/account", authenticateToken, async (req, res) => {
   try {
     await supabase.from("users").delete().eq("id", req.userId);
     res.json({ message: "Account deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── 2FA Routes ──
+
+router.get("/2fa/status", authenticateToken, async (req, res) => {
+  try {
+    const { data: user } = await supabase
+      .from("users")
+      .select("totp_enabled")
+      .eq("id", req.userId)
+      .maybeSingle();
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ totp_enabled: user.totp_enabled === true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/2fa/setup", authenticateToken, async (req, res) => {
+  try {
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, username, email, totp_secret, totp_enabled")
+      .eq("id", req.userId)
+      .maybeSingle();
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.totp_enabled) return res.status(400).json({ error: "2FA is already enabled. Disable it first to set up a new key." });
+
+    const secret = speakeasy.generateSecret({
+      name: `SocialClone (${user.email || user.username})`,
+    });
+
+    await supabase.from("users").update({ totp_secret: secret.base32 }).eq("id", user.id);
+
+    const qrDataUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+    res.json({ secret: secret.base32, qr_code: qrDataUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/2fa/verify", authenticateToken, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Verification code is required" });
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, totp_secret, totp_enabled")
+      .eq("id", req.userId)
+      .maybeSingle();
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.totp_secret) return res.status(400).json({ error: "2FA not set up. Call /2fa/setup first." });
+    if (user.totp_enabled) return res.status(400).json({ error: "2FA is already enabled" });
+
+    const verified = speakeasy.totp.verify({
+      secret: user.totp_secret,
+      encoding: "base32",
+      token: code,
+      window: 1,
+    });
+
+    if (!verified) return res.status(400).json({ error: "Invalid code. Try again." });
+
+    await supabase.from("users").update({ totp_enabled: true }).eq("id", user.id);
+    res.json({ message: "2FA enabled successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/2fa/challenge", async (req, res) => {
+  try {
+    const { code, temp_token } = req.body;
+    if (!code || !temp_token) return res.status(400).json({ error: "Code and temp token are required" });
+
+    let userId;
+    try {
+      const decoded = jwt.verify(temp_token, process.env.JWT_SECRET || "change-this-secret-in-production");
+      if (!decoded.temp) return res.status(401).json({ error: "Invalid temp token" });
+      userId = decoded.userId;
+    } catch {
+      return res.status(401).json({ error: "Temp token expired or invalid. Please log in again." });
+    }
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, totp_secret, username, email, avatar, bio, verified")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.totp_secret) return res.status(400).json({ error: "2FA is not set up for this account" });
+
+    const verified = speakeasy.totp.verify({
+      secret: user.totp_secret,
+      encoding: "base32",
+      token: code,
+      window: 1,
+    });
+
+    if (!verified) return res.status(400).json({ error: "Invalid 2FA code" });
+
+    const token = generateToken(user.id);
+    res.json({
+      token,
+      user: {
+        id: user.id, username: user.username, email: user.email,
+        avatar: user.avatar, bio: user.bio, verified: user.verified === true,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/2fa/disable", authenticateToken, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "Password is required to disable 2FA" });
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id, password, totp_enabled")
+      .eq("id", req.userId)
+      .maybeSingle();
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.totp_enabled) return res.status(400).json({ error: "2FA is not enabled" });
+
+    if (user.password && !bcrypt.compareSync(password, user.password)) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    await supabase
+      .from("users")
+      .update({ totp_secret: null, totp_enabled: false })
+      .eq("id", user.id);
+
+    res.json({ message: "2FA disabled successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

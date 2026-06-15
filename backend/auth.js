@@ -6,6 +6,10 @@ export function generateToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "7d" });
 }
 
+export function generateTempToken(userId) {
+  return jwt.sign({ userId, temp: true }, JWT_SECRET, { expiresIn: "5m" });
+}
+
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];

@@ -174,6 +174,27 @@ function markAllNotificationsRead() {
   return api("/notifications/read-all", { method: "POST" });
 }
 
+// 2FA
+function get2FAStatus() {
+  return api("/auth/2fa/status");
+}
+
+function setup2FA() {
+  return api("/auth/2fa/setup", { method: "POST" });
+}
+
+function verify2FA(code) {
+  return api("/auth/2fa/verify", { method: "POST", body: { code } });
+}
+
+function challenge2FA(code, temp_token) {
+  return api("/auth/2fa/challenge", { method: "POST", body: { code, temp_token } });
+}
+
+function disable2FA(password) {
+  return api("/auth/2fa/disable", { method: "POST", body: { password } });
+}
+
 // Upload
 async function uploadImage(file) {
   const formData = new FormData();

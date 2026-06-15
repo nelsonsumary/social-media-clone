@@ -16,6 +16,7 @@ A full-stack social media clone built with vanilla JavaScript, HTML, CSS, Node.j
 - Follow/unfollow other users
 - Real-time notifications
 - Dark mode toggle
+- Two-factor authentication (TOTP) via authenticator apps (optional)
 
 ## Tech Stack
 
@@ -149,7 +150,7 @@ Then open `http://localhost:3000` in your browser. The backend serves the fronte
 
 ### 4. Database Design
 PostgreSQL stores 7 tables (created by running `schema.sql`):
-- **users** - id (UUID), username, email, password (hashed), avatar, bio, verified, google_id
+- **users** - id (UUID), username, email, password (hashed), avatar, bio, verified, google_id, totp_secret, totp_enabled
 - **posts** - id (UUID), user_id (FK), content, image
 - **messages** - id (UUID), sender_id, receiver_id (FKs), content
 - **conversations** - id (UUID), participant1, participant2, last_message
@@ -163,6 +164,7 @@ All foreign keys use `ON DELETE CASCADE` — deleting a user removes all their d
 
 - Passwords are hashed with bcryptjs (12 rounds)
 - JWT tokens expire after 7 days
+- Optional TOTP two-factor authentication via authenticator apps (Google Authenticator, Authy, etc.)
 - File uploads are restricted to images only (max 5MB)
 - Account deletion cascades to all user data
 - CORS is enabled for development — restrict in production

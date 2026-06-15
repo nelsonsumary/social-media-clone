@@ -203,6 +203,8 @@ function attachAuthListeners() {
     });
   });
 
+  let tempToken = null;
+
   document.getElementById("form-login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -213,13 +215,51 @@ function attachAuthListeners() {
     btn.innerHTML = '<span class="btn-spinner"></span>';
     try {
       const data = await login(form.email.value, form.password.value);
-      saveSession(data.token, data.user);
-      showApp();
+      if (data.requires_2fa) {
+        tempToken = data.temp_token;
+        document.getElementById("form-login").classList.add("hidden");
+        document.getElementById("login-2fa-challenge").classList.remove("hidden");
+        document.getElementById("login-2fa-code").focus();
+      } else {
+        saveSession(data.token, data.user);
+        showApp();
+      }
     } catch (err) {
       btn.innerHTML = "Log In";
       btn.disabled = false;
       errEl.textContent = err.message;
     }
+  });
+
+  document.getElementById("login-2fa-submit-btn").addEventListener("click", async () => {
+    const code = document.getElementById("login-2fa-code").value.trim();
+    const errEl = document.getElementById("login-2fa-error");
+    const btn = document.getElementById("login-2fa-submit-btn");
+    errEl.textContent = "";
+    if (!code || code.length !== 6) return (errEl.textContent = "Enter the 6-digit code");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>';
+    try {
+      const data = await challenge2FA(code, tempToken);
+      saveSession(data.token, data.user);
+      showApp();
+    } catch (err) {
+      btn.innerHTML = "Verify";
+      btn.disabled = false;
+      errEl.textContent = err.message;
+    }
+  });
+
+  document.getElementById("login-2fa-code").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("login-2fa-submit-btn").click();
+  });
+
+  document.getElementById("login-2fa-back-btn").addEventListener("click", () => {
+    document.getElementById("login-2fa-challenge").classList.add("hidden");
+    document.getElementById("form-login").classList.remove("hidden");
+    document.getElementById("login-2fa-code").value = "";
+    document.getElementById("login-2fa-error").textContent = "";
+    tempToken = null;
   });
 
   document.getElementById("form-signup").addEventListener("submit", async (e) => {
@@ -674,6 +714,94 @@ async function initProfile() {
     } catch (err) {
       alert(err.message);
     }
+  });
+
+  init2FA();
+}
+
+async function init2FA() {
+  const statusEl = document.getElementById("profile-2fa-status");
+  const setupEl = document.getElementById("profile-2fa-setup");
+  const disableEl = document.getElementById("profile-2fa-disable");
+  if (!statusEl) return;
+
+  try {
+    const { totp_enabled } = await get2FAStatus();
+    if (totp_enabled) {
+      statusEl.innerHTML = '<span style="color:#4caf50;font-weight:600">✅ Two-factor authentication is enabled</span>';
+      setupEl.classList.add("hidden");
+      disableEl.classList.remove("hidden");
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--text-muted)">❌ Two-factor authentication is disabled</span>';
+      setupEl.classList.remove("hidden");
+      disableEl.classList.add("hidden");
+      await setup2FAUI();
+    }
+  } catch {
+    statusEl.textContent = "Failed to load 2FA status";
+  }
+}
+
+async function setup2FAUI() {
+  const qrEl = document.getElementById("profile-2fa-qr");
+  const secretEl = document.getElementById("profile-2fa-secret");
+  const codeInput = document.getElementById("profile-2fa-code");
+  const verifyBtn = document.getElementById("profile-2fa-verify-btn");
+  const errEl = document.getElementById("profile-2fa-error");
+
+  try {
+    const data = await setup2FA();
+    qrEl.innerHTML = `<img src="${data.qr_code}" alt="QR Code" style="max-width:200px;border-radius:8px" />`;
+    secretEl.textContent = data.secret;
+  } catch (err) {
+    qrEl.innerHTML = `<p class="auth-error">${err.message}</p>`;
+    return;
+  }
+
+  verifyBtn.addEventListener("click", async () => {
+    const code = codeInput.value.trim();
+    errEl.textContent = "";
+    if (!code || code.length !== 6) return (errEl.textContent = "Enter the 6-digit code");
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = "Verifying...";
+    try {
+      await verify2FA(code);
+      alert("2FA enabled successfully!");
+      init2FA();
+    } catch (err) {
+      errEl.textContent = err.message;
+    }
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = "Verify";
+  });
+
+  codeInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") verifyBtn.click();
+  });
+
+  const disableBtn = document.getElementById("profile-2fa-disable-btn");
+  const pwInput = document.getElementById("profile-2fa-password");
+  const disableErrEl = document.getElementById("profile-2fa-disable-error");
+
+  disableBtn.addEventListener("click", async () => {
+    const password = pwInput.value;
+    disableErrEl.textContent = "";
+    if (!password) return (disableErrEl.textContent = "Enter your password");
+    disableBtn.disabled = true;
+    disableBtn.textContent = "Disabling...";
+    try {
+      await disable2FA(password);
+      alert("2FA disabled successfully!");
+      init2FA();
+    } catch (err) {
+      disableErrEl.textContent = err.message;
+    }
+    disableBtn.disabled = false;
+    disableBtn.textContent = "Disable 2FA";
+  });
+
+  pwInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") disableBtn.click();
   });
 }
 

@@ -31,13 +31,20 @@
           <button class="tab" data-tab="signup">Sign Up</button>
         </div>
         <form id="form-login" class="auth-form">
-          <input type="text" name="email" placeholder="Email or username" required />
+          <input type="text" name="email" id="login-email" placeholder="Email or username" required />
           <input type="password" name="password" id="login-password" placeholder="Password" required />
           <label class="show-password-label"><input type="checkbox" class="show-password" data-target="login-password" /> Show password</label>
-          <button type="submit">Log In</button>
+          <button type="submit" id="login-submit-btn">Log In</button>
           <a href="#" id="btn-forgot-password" class="forgot-password-link">Forgot password?</a>
           <p class="auth-error" id="login-error"></p>
         </form>
+        <div id="login-2fa-challenge" class="auth-form hidden">
+          <p style="text-align:center;font-size:14px;color:var(--text-secondary)">Enter the 6-digit code from your authenticator app</p>
+          <input type="text" id="login-2fa-code" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" />
+          <button type="button" id="login-2fa-submit-btn">Verify</button>
+          <button type="button" id="login-2fa-back-btn" class="forgot-password-link">Back to Login</button>
+          <p class="auth-error" id="login-2fa-error"></p>
+        </div>
         <form id="form-signup" class="auth-form hidden">
           <input type="text" name="username" placeholder="Username" required />
           <input type="email" name="email" placeholder="Email" required />
@@ -221,6 +228,29 @@
           <input type="text" id="edit-bio" placeholder="Update your bio" />
           <input type="file" id="edit-avatar" accept="image/*" />
           <button id="btn-save-profile">Save</button>
+        </div>
+        <hr />
+        <div class="profile-2fa-section">
+          <h3>Two-Factor Authentication</h3>
+          <div id="profile-2fa-status"></div>
+          <div id="profile-2fa-setup" class="hidden">
+            <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code below.</p>
+            <div id="profile-2fa-qr" style="text-align:center;margin-bottom:12px"></div>
+            <p style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:12px">Or enter this key manually: <code id="profile-2fa-secret" style="font-size:14px;color:var(--link-color)"></code></p>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="profile-2fa-code" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" style="flex:1" />
+              <button id="profile-2fa-verify-btn" class="btn-full" style="width:auto;padding:10px 20px">Verify</button>
+            </div>
+            <p class="auth-error" id="profile-2fa-error"></p>
+          </div>
+          <div id="profile-2fa-disable" class="hidden">
+            <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">2FA is currently enabled. To disable, enter your password.</p>
+            <div style="display:flex;gap:8px">
+              <input type="password" id="profile-2fa-password" placeholder="Your password" style="flex:1" />
+              <button id="profile-2fa-disable-btn" class="btn-danger" style="width:auto;padding:10px 20px">Disable 2FA</button>
+            </div>
+            <p class="auth-error" id="profile-2fa-disable-error"></p>
+          </div>
         </div>
         <hr />
         <button id="btn-delete-account" class="btn-danger">Delete My Account</button>

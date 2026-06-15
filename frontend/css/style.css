@@ -830,7 +830,10 @@ html.dark .auth-form input,
 html.dark #user-search,
 html.dark .profile-edit input[type="text"],
 html.dark .create-post textarea,
-html.dark .message-input-area input {
+html.dark .message-input-area input,
+html.dark #profile-2fa-code,
+html.dark #profile-2fa-password,
+html.dark #login-2fa-code {
   background: var(--input-bg);
   border-color: var(--border-color);
   color: var(--text-primary);
@@ -1345,6 +1348,36 @@ html.dark .bottom-nav {
   align-items: center;
   justify-content: center;
   margin-left: 0;
+}
+
+/* ── 2FA ── */
+.profile-2fa-section {
+  margin: 16px 0;
+}
+
+.profile-2fa-section h3 {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+#profile-2fa-code,
+#profile-2fa-password,
+#login-2fa-code {
+  padding: 10px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 15px;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+#profile-2fa-code:focus,
+#profile-2fa-password:focus,
+#login-2fa-code:focus {
+  outline: none;
+  border-color: var(--link-color);
 }
 
 /* ── Message Back Button ── */
