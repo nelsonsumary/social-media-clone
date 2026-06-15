@@ -11,10 +11,22 @@ router.get("/", authenticateToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
+    const userId = req.userId;
+
+    const { data: follows } = await supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", userId);
+
+    const followedIds = (follows || []).map((f) => f.following_id);
+    const visibleIds = [userId, ...followedIds.filter((id) => id !== userId)];
+
+    if (visibleIds.length === 0) return res.json([]);
 
     const { data: posts, error } = await supabase
       .from("posts")
       .select("id, content, image, created_at, user_id, users!user_id(username, avatar)")
+      .in("user_id", visibleIds)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
