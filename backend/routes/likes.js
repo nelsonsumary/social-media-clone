@@ -10,7 +10,7 @@ router.get("/:postId/likes", authenticateToken, async (req, res) => {
 
     const { data: likes, error } = await supabase
       .from("likes")
-      .select("user_id, users!inner(username, avatar)")
+      .select("user_id, users!user_id(username, avatar)")
       .eq("post_id", postId);
 
     if (error) throw error;

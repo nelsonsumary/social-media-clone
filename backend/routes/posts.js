@@ -14,7 +14,7 @@ router.get("/", authenticateToken, async (req, res) => {
 
     const { data: posts, error } = await supabase
       .from("posts")
-      .select("id, content, image, created_at, user_id, users!inner(username, avatar)")
+      .select("id, content, image, created_at, user_id, users!user_id(username, avatar)")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -72,7 +72,7 @@ router.get("/user/:userId", authenticateToken, async (req, res) => {
   try {
     const { data: posts, error } = await supabase
       .from("posts")
-      .select("id, content, image, created_at, user_id, users!inner(username, avatar)")
+      .select("id, content, image, created_at, user_id, users!user_id(username, avatar)")
       .eq("user_id", req.params.userId)
       .order("created_at", { ascending: false });
 
@@ -175,7 +175,7 @@ router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const { data: post, error } = await supabase
       .from("posts")
-      .select("id, content, image, created_at, user_id, users!inner(username, avatar)")
+      .select("id, content, image, created_at, user_id, users!user_id(username, avatar)")
       .eq("id", req.params.id)
       .single();
 

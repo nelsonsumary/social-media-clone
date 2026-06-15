@@ -9,7 +9,7 @@ router.get("/:postId/comments", authenticateToken, async (req, res) => {
   try {
     const { data: comments, error } = await supabase
       .from("comments")
-      .select("id, content, created_at, user_id, users!inner(username, avatar)")
+      .select("id, content, created_at, user_id, users!user_id(username, avatar)")
       .eq("post_id", req.params.postId)
       .order("created_at", { ascending: true });
 
@@ -46,7 +46,7 @@ router.post("/:postId/comments", authenticateToken, async (req, res) => {
 
     const { data: comment } = await supabase
       .from("comments")
-      .select("id, content, created_at, user_id, users!inner(username, avatar)")
+      .select("id, content, created_at, user_id, users!user_id(username, avatar)")
       .eq("id", id)
       .single();
 
@@ -101,7 +101,7 @@ router.put("/comments/:commentId", authenticateToken, async (req, res) => {
 
     const { data: comment } = await supabase
       .from("comments")
-      .select("id, content, created_at, user_id, users!inner(username, avatar)")
+      .select("id, content, created_at, user_id, users!user_id(username, avatar)")
       .eq("id", req.params.commentId)
       .single();
 
