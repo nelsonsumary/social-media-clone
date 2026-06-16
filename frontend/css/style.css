@@ -1254,6 +1254,50 @@ html.dark .resend-btn {
   vertical-align: middle;
 }
 
+/* ── Skeleton Loaders ── */
+@keyframes sk-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.sk-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sk-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-primary) 50%, var(--border-color) 75%);
+  background-size: 200px 100%;
+  animation: sk-shimmer 1.5s ease-in-out infinite;
+}
+
+.sk-line {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-primary) 50%, var(--border-color) 75%);
+  background-size: 200px 100%;
+  animation: sk-shimmer 1.5s ease-in-out infinite;
+}
+
+html.dark .sk-avatar,
+html.dark .sk-line {
+  background: linear-gradient(90deg, #2a2a4a 25%, #1a1a3e 50%, #2a2a4a 75%);
+  background-size: 200px 100%;
+}
+
 /* ── Empty States ── */
 .empty-state {
   display: flex;

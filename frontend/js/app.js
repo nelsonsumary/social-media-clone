@@ -360,6 +360,7 @@ function loadFacebookSDK(appId) {
 // ── Feed ──
 async function initFeed() {
   const postsEl = document.getElementById("feed-posts");
+  postsEl.innerHTML = skeletonFeed();
   try {
     const posts = await getFeed();
     renderPosts(posts, postsEl, true);
@@ -623,6 +624,7 @@ async function initMessages() {
       if (e.key === "Enter") handleSendMessage();
     });
   }
+  document.getElementById("conversations-list").innerHTML = skeletonConversations();
   await loadConversations();
 }
 
@@ -915,7 +917,7 @@ async function initUsers() {
 // ── View another user's profile ──
 async function showUserProfile(userId) {
   const container = document.getElementById("page-content");
-  container.innerHTML = "<p class='hint'>Loading profile...</p>";
+  container.innerHTML = skeletonFeed(1);
 
   try {
     const user = await getUser(userId);
@@ -979,6 +981,8 @@ async function initNotifications() {
       } catch {}
     });
   }
+
+  list.innerHTML = skeletonNotifications();
 
   try {
     const notifications = await getNotifications();
@@ -1124,6 +1128,24 @@ function formatTime(dateStr) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return d.toLocaleDateString();
+}
+
+function skeletonFeed(count = 3) {
+  return Array(count).fill().map(() =>
+    `<div class="sk-card"><div class="sk-row"><div class="sk-avatar"></div><div class="sk-line" style="width:120px"></div><div class="sk-line" style="width:60px;margin-left:auto"></div></div><div class="sk-line" style="width:100%;height:16px;margin-top:12px"></div><div class="sk-line" style="width:70%;height:16px;margin-top:8px"></div><div class="sk-row" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color)"><div class="sk-line" style="width:60px;height:14px"></div><div class="sk-line" style="width:60px;height:14px"></div></div></div>`
+  ).join("");
+}
+
+function skeletonConversations(count = 5) {
+  return Array(count).fill().map(() =>
+    `<div class="sk-card" style="border-radius:0;box-shadow:none;border-bottom:1px solid var(--border-color);margin:0"><div class="sk-row"><div class="sk-avatar"></div><div style="flex:1"><div class="sk-line" style="width:80px;height:14px"></div><div class="sk-line" style="width:160px;height:12px;margin-top:6px"></div></div></div></div>`
+  ).join("");
+}
+
+function skeletonNotifications(count = 5) {
+  return Array(count).fill().map(() =>
+    `<div class="sk-card" style="border-radius:12px;margin-bottom:8px"><div class="sk-row"><div class="sk-avatar" style="width:32px;height:32px"></div><div style="flex:1"><div class="sk-line" style="width:200px;height:14px"></div></div><div class="sk-line" style="width:40px;height:12px"></div></div></div>`
+  ).join("");
 }
 
 function emptyState(icon, title, subtitle) {
