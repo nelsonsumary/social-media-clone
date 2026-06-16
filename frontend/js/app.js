@@ -725,16 +725,16 @@ async function loadConversation(userId) {
           const sent = m.sender_id === getStoredUser()?.id;
           if (sent) {
             return `<div class="msg-row sent" data-msgid="${m.id}">
-              <div class="msg sent">
-                <span class="msg-text">${escapeHtml(m.content)}</span>
-                <div class="msg-time">${formatTime(m.created_at)}</div>
-              </div>
               <div class="msg-menu">
-                <button class="msg-menu-btn" data-msgid="${m.id}">&#x22EE;</button>
+                <button class="msg-menu-btn" data-msgid="${m.id}">&#x22EF;</button>
                 <div class="msg-menu-dropdown hidden">
                   <button class="msg-edit-btn" data-msgid="${m.id}">Edit</button>
                   <button class="msg-del-btn" data-msgid="${m.id}">Delete</button>
                 </div>
+              </div>
+              <div class="msg sent">
+                <span class="msg-text">${escapeHtml(m.content)}</span>
+                <div class="msg-time">${formatTime(m.created_at)}</div>
               </div>
             </div>`;
           }
