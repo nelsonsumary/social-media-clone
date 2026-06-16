@@ -420,7 +420,7 @@ function renderPosts(posts, container, showDelete = false) {
       (p) => `
       <div class="post-card" data-postid="${p.id}">
         <div class="post-header">
-          <img src="${p.avatar || ""}" class="post-avatar" onerror="this.src=''" />
+          <img src="${p.avatar || ""}" class="post-avatar" data-userid="${p.user_id}" onerror="this.src=''" />
           <a href="#" class="post-username" data-userid="${p.user_id}">${p.username}</a>
           <span class="post-time">${formatTime(p.created_at)}</span>
         </div>
@@ -460,12 +460,16 @@ function renderPosts(posts, container, showDelete = false) {
     });
   });
 
-  container.querySelectorAll(".post-username").forEach((el) => {
-    el.addEventListener("click", (e) => {
-      e.preventDefault();
-      showUserProfile(el.dataset.userid);
+  if (!container._postNavListener) {
+    container.addEventListener("click", (e) => {
+      const el = e.target.closest(".post-username, .post-avatar");
+      if (el && el.dataset.userid) {
+        e.preventDefault();
+        showUserProfile(el.dataset.userid);
+      }
     });
-  });
+    container._postNavListener = true;
+  }
 
   container.querySelectorAll(".post-like-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -1031,38 +1035,42 @@ async function initUsers() {
 
 // ── View another user's profile ──
 async function showUserProfile(userId) {
-  const container = document.getElementById("page-content");
-  container.innerHTML = skeletonFeed(1);
-
   try {
+    if (!userId) return;
+    const container = document.getElementById("page-content");
+    if (!container) return;
+    container.innerHTML = skeletonFeed(1);
+
     const user = await getUser(userId);
     const posts = await getUserPosts(userId);
 
     container.innerHTML = `
       <div class="profile-container">
-        <h2>${user.username}</h2>
-        <div class="profile-card">
-          <div class="profile-avatar-container">
-            <img src="${user.avatar || ""}" class="profile-avatar" onerror="this.src=''" />
+        <h2 style="margin-bottom:16px">${escapeHtml(user.username)}</h2>
+        <div class="profile-card" style="background:var(--bg-card);padding:24px;border-radius:16px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06)">
+          <div class="profile-avatar-container" style="width:96px;height:96px;margin-bottom:16px">
+            <img src="${user.avatar || ""}" style="width:96px;height:96px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />
           </div>
-          <p><strong>Bio:</strong> ${escapeHtml(user.bio || "No bio")}</p>
-          <div class="profile-stats">
+          <p style="margin-bottom:12px">${escapeHtml(user.bio || "")}</p>
+          <div class="profile-stats" style="display:flex;gap:20px;margin-bottom:16px">
             <span>Posts: <strong>${user.postCount}</strong></span>
             <span>Followers: <strong>${user.followerCount}</strong></span>
             <span>Following: <strong>${user.followingCount}</strong></span>
           </div>
-          <button id="btn-user-follow" class="user-card-btn">${user.isFollowing ? "Unfollow" : "Follow"}</button>
-          <button id="btn-user-message" class="user-card-btn">Send Message</button>
-          <button id="btn-user-back" class="user-card-btn" style="background:#888">Back</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="btn-user-follow" class="user-card-btn" style="padding:8px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff">${user.isFollowing ? "Unfollow" : "Follow"}</button>
+            <button id="btn-user-message" class="user-card-btn" style="padding:8px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;background:var(--bg-card);color:var(--text-primary)">Send Message</button>
+            <button id="btn-user-back" class="user-card-btn" style="padding:8px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;background:#888;color:#fff">Back</button>
+          </div>
         </div>
-        <h3>Posts</h3>
-        <div id="profile-posts"></div>
+        <h3 style="margin-bottom:16px">Posts</h3>
+        <div id="profile-posts" class="profile-posts-grid"></div>
       </div>
     `;
 
     renderPosts(posts, document.getElementById("profile-posts"));
 
-    document.getElementById("btn-user-follow").addEventListener("click", async () => {
+    document.getElementById("btn-user-follow")?.addEventListener("click", async () => {
       try {
         if (user.isFollowing) await unfollowUser(userId);
         else await followUser(userId);
@@ -1070,14 +1078,16 @@ async function showUserProfile(userId) {
       } catch (err) { alert(err.message); }
     });
 
-    document.getElementById("btn-user-message").addEventListener("click", () => {
+    document.getElementById("btn-user-message")?.addEventListener("click", () => {
       currentChatUserId = userId;
       navigateTo("messages");
     });
 
-    document.getElementById("btn-user-back").addEventListener("click", () => navigateTo("feed"));
-  } catch {
-    container.innerHTML = '<p class="hint">User not found</p>';
+    document.getElementById("btn-user-back")?.addEventListener("click", () => navigateTo("feed"));
+  } catch (err) {
+    const container = document.getElementById("page-content");
+    if (container) container.innerHTML = '<p class="hint" style="padding:40px;text-align:center">User not found</p>';
+    console.error("showUserProfile error:", err);
   }
 }
 

@@ -321,6 +321,17 @@ background: linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);  bor
 .upload-status { font-size: 13px; margin-top: 8px; color: #888; }
 
 /* Post Cards */
+
+.profile-posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.profile-posts-grid .post-card {
+  margin-bottom: 0;
+}
+
 .post-card {
   background: #fff;
   border-radius: 16px;
@@ -349,6 +360,7 @@ background: linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);  bor
   border-radius: 50%;
   object-fit: cover;
   background: linear-gradient(135deg, #6c5ce7, #fd79a8);
+  cursor: pointer;
 }
 
 .post-username {
