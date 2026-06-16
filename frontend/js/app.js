@@ -998,9 +998,14 @@ async function initUsers() {
       if (!q) { resultsEl.innerHTML = ""; return; }
       try {
         const users = await searchUsers(q);
+        const followStates = await Promise.all(
+          users.map((u) =>
+            api(`/users/${u.id}`).then((p) => p.isFollowing).catch(() => false)
+          )
+        );
         resultsEl.innerHTML = users
           .map(
-            (u) => `
+            (u, i) => `
             <div class="user-card">
               <div class="user-card-info">
                 <img src="${u.avatar || ""}" class="user-card-img" onerror="this.src=''" />
@@ -1010,6 +1015,7 @@ async function initUsers() {
                 </div>
               </div>
               <div>
+                <button class="user-card-btn" data-action="follow" data-userid="${u.id}" data-following="${followStates[i]}">${followStates[i] ? "Unfollow" : "Follow"}</button>
                 <button class="user-card-btn" data-action="msg" data-userid="${u.id}">Message</button>
                 <button class="user-card-btn" data-action="view" data-userid="${u.id}">View</button>
               </div>
@@ -1017,6 +1023,18 @@ async function initUsers() {
           `
           )
           .join("");
+
+        resultsEl.querySelectorAll("[data-action=follow]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const uid = btn.dataset.userid;
+            const following = btn.dataset.following === "true";
+            try {
+              if (following) await unfollowUser(uid);
+              else await followUser(uid);
+              initUsers();
+            } catch (err) { alert(err.message); }
+          });
+        });
 
         resultsEl.querySelectorAll("[data-action=msg]").forEach((btn) => {
           btn.addEventListener("click", () => {

@@ -68,7 +68,9 @@ router.post("/:userId/follow", authenticateToken, async (req, res) => {
       .insert({ follower_id: req.userId, following_id: req.params.userId });
 
     if (error && error.code === "23505") {
-      return res.json({ message: "Already following" });
+      const { count: fc } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", req.params.userId);
+      const { count: fgc } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", req.params.userId);
+      return res.json({ message: "Already following", followerCount: fc, followingCount: fgc, isFollowing: true });
     }
     if (error) throw error;
 
@@ -78,7 +80,9 @@ router.post("/:userId/follow", authenticateToken, async (req, res) => {
       type: "follow",
     });
 
-    res.json({ message: "Followed" });
+    const { count: fc2 } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", req.params.userId);
+    const { count: fgc2 } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", req.params.userId);
+    res.json({ message: "Followed", followerCount: fc2, followingCount: fgc2, isFollowing: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -92,7 +96,9 @@ router.delete("/:userId/follow", authenticateToken, async (req, res) => {
       .eq("follower_id", req.userId)
       .eq("following_id", req.params.userId);
 
-    res.json({ message: "Unfollowed" });
+    const { count: fc } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", req.params.userId);
+    const { count: fgc } = await supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", req.params.userId);
+    res.json({ message: "Unfollowed", followerCount: fc, followingCount: fgc, isFollowing: false });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
