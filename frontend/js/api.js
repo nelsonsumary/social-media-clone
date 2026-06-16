@@ -98,7 +98,7 @@ function sendMessage(userId, content) {
   return api(`/messages/${userId}`, { method: "POST", body: { content } });
 }
 
-function updateMessage(messageId, content) {
+function editMessage(messageId, content) {
   return api(`/messages/item/${messageId}`, { method: "PUT", body: { content } });
 }
 

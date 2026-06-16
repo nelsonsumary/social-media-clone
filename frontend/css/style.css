@@ -485,6 +485,54 @@ background: linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);  bor
   margin-top: 4px;
 }
 
+.msg-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.msg-edit-btn,
+.msg-del-btn {
+  background: none;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0.6;
+}
+
+.msg-edit-btn:hover,
+.msg-del-btn:hover {
+  opacity: 1;
+}
+
+.msg-edit-btn { color: #6c5ce7; }
+.msg-del-btn { color: #e74c3c; }
+
+.msg-edit-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.msg-edit-save,
+.msg-edit-cancel {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.msg-edit-save { background: #6c5ce7; color: #fff; }
+.msg-edit-cancel { background: #ddd; color: #333; }
+
 .message-input-area {
   display: flex;
   padding: 12px 16px;
@@ -1477,6 +1525,11 @@ html.dark .message-input-area {
   background: var(--bg-card);
   border-color: var(--border-color);
 }
+
+html.dark .msg-edit-btn { color: #a29bfe; }
+html.dark .msg-del-btn { color: #ff6b6b; }
+html.dark .msg-edit-input { background: #2a2a4a; border-color: #444; color: #eee; }
+html.dark .msg-edit-cancel { background: #444; color: #eee; }
 html.dark .profile-stat strong { color: var(--text-primary); }
 html.dark .profile-stat span { color: var(--text-muted); }
 

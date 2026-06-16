@@ -704,13 +704,59 @@ async function loadConversation(userId) {
       .map(
         (m) => {
           const sent = m.sender_id === getStoredUser()?.id;
-          return `<div class="msg ${sent ? "sent" : "received"}">
-            ${escapeHtml(m.content)}
+          return `<div class="msg ${sent ? "sent" : "received"}" data-msgid="${m.id}">
+            <span class="msg-text">${escapeHtml(m.content)}</span>
             <div class="msg-time">${formatTime(m.created_at)}</div>
+            ${sent ? `<div class="msg-actions">
+              <button class="msg-edit-btn" data-msgid="${m.id}">Edit</button>
+              <button class="msg-del-btn" data-msgid="${m.id}">Delete</button>
+            </div>` : ""}
           </div>`;
         }
       )
       .join("");
+
+    body.querySelectorAll(".msg-edit-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const msgEl = btn.closest(".msg");
+        const textEl = msgEl.querySelector(".msg-text");
+        const orig = textEl.textContent;
+        textEl.innerHTML = `<input type="text" class="msg-edit-input" value="${escapeHtml(orig)}" />
+          <button class="msg-edit-save" data-msgid="${btn.dataset.msgid}">Save</button>
+          <button class="msg-edit-cancel">Cancel</button>`;
+        const input = textEl.querySelector(".msg-edit-input");
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+
+        textEl.querySelector(".msg-edit-cancel").addEventListener("click", () => {
+          textEl.textContent = orig;
+        });
+
+        textEl.querySelector(".msg-edit-save").addEventListener("click", async () => {
+          const newContent = input.value.trim();
+          if (!newContent) return;
+          try {
+            await editMessage(btn.dataset.msgid, newContent);
+            loadConversation(currentChatUserId);
+          } catch (err) { alert(err.message); }
+        });
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") textEl.querySelector(".msg-edit-save")?.click();
+          if (e.key === "Escape") textEl.querySelector(".msg-edit-cancel")?.click();
+        });
+      });
+    });
+
+    body.querySelectorAll(".msg-del-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Delete this message?")) return;
+        try {
+          await deleteMessage(btn.dataset.msgid);
+          loadConversation(currentChatUserId);
+        } catch (err) { alert(err.message); }
+      });
+    });
 
     body.scrollTop = body.scrollHeight;
   } catch {
