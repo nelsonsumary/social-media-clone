@@ -405,7 +405,7 @@ async function handleCreatePost() {
 
 function renderPosts(posts, container, showDelete = false) {
   if (!posts.length) {
-    container.innerHTML = '<p class="hint">No posts yet</p>';
+    container.innerHTML = emptyState("📝", "No posts yet", "Follow some users to see their posts here");
     return;
   }
 
@@ -538,7 +538,7 @@ async function loadComments(postId, list) {
   try {
     const comments = await getComments(postId);
     if (!comments.length) {
-      list.innerHTML = '<p class="hint" style="padding:8px 0">No comments yet</p>';
+      list.innerHTML = emptyState("💬", "No comments yet", "Be the first to comment");
       return;
     }
     const userId = getStoredUser()?.id;
@@ -631,7 +631,7 @@ async function loadConversations() {
   try {
     const convs = await getConversations();
     if (!convs.length) {
-      list.innerHTML = '<p class="hint">No conversations yet. Find users to message!</p>';
+      list.innerHTML = emptyState("💌", "No conversations yet", "Find users to message from the Find tab");
       return;
     }
     list.innerHTML = convs
@@ -983,7 +983,7 @@ async function initNotifications() {
   try {
     const notifications = await getNotifications();
     if (!notifications.length) {
-      list.innerHTML = '<p class="hint">No notifications yet</p>';
+      list.innerHTML = emptyState("🔔", "No notifications yet", "Notifications will appear here when someone interacts with you");
       return;
     }
     list.innerHTML = notifications
@@ -1124,6 +1124,10 @@ function formatTime(dateStr) {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return d.toLocaleDateString();
+}
+
+function emptyState(icon, title, subtitle) {
+  return `<div class="empty-state"><div class="empty-state-icon">${icon}</div><div class="empty-state-title">${title}</div>${subtitle ? `<div class="empty-state-subtitle">${subtitle}</div>` : ""}</div>`;
 }
 
 function escapeHtml(str) {
