@@ -46,6 +46,9 @@ router.post("/signup", async (req, res) => {
     if (!username || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
+    if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+      return res.status(400).json({ error: "Invalid username" });
+    }
 
     const { data: existing } = await supabase
       .from("users")

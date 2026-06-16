@@ -7,7 +7,7 @@ A full-stack social media clone built with vanilla JavaScript, HTML, CSS, Node.j
 ## Features
 
 - User signup, login, and account deletion
-- Social login (Google, Facebook, LinkedIn, X/Twitter, TikTok, Spotify)
+- Social login (Google, Facebook, LinkedIn)
 - Email verification via Google Apps Script
 - Public posting with image uploads
 - Like and comment on posts

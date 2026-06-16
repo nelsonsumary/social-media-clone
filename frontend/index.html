@@ -25,7 +25,7 @@
   <template id="page-auth">
     <div class="auth-container">
       <div class="auth-card">
-        <h1>SocialClone</h1>
+        <h1 class="brand-shimmer">SocialClone</h1>
         <div class="auth-tabs">
           <button class="tab active" data-tab="login">Login</button>
           <button class="tab" data-tab="signup">Sign Up</button>
@@ -59,9 +59,6 @@
           <p class="oauth-label">Continue with</p>
           <button class="oauth-btn oauth-facebook" data-provider="facebook">Facebook</button>
           <button class="oauth-btn oauth-linkedin" data-provider="linkedin">LinkedIn</button>
-          <button class="oauth-btn oauth-twitter" data-provider="twitter">X (Twitter)</button>
-          <button class="oauth-btn oauth-tiktok" data-provider="tiktok">TikTok</button>
-          <button class="oauth-btn oauth-spotify" data-provider="spotify">Spotify</button>
         </div>
       </div>
     </div>
@@ -104,7 +101,7 @@
     <div class="app-layout">
       <nav class="sidebar">
         <div class="sidebar-header">
-          <h2>SocialClone</h2>
+          <h2 class="brand-shimmer">SocialClone</h2>
         </div>
         <ul class="sidebar-nav">
           <li><button class="nav-btn active" data-view="feed">Feed</button></li>
@@ -134,7 +131,7 @@
       </nav>
       <main class="main-content" id="main-content">
         <div class="mobile-header" id="mobile-header">
-          <h2>SocialClone</h2>
+          <h2 class="brand-shimmer">SocialClone</h2>
           <div class="mobile-header-actions">
             <label class="toggle-switch">
               <input type="checkbox" id="btn-dark-mode-mobile" />
@@ -215,54 +212,115 @@
   <!-- Template: Profile -->
   <template id="page-profile">
     <div class="profile-container">
-      <h2>My Profile</h2>
-      <div class="profile-card">
+      <div id="profile-skeleton" class="sk-profile hidden">
+        <div class="sk-row"><div class="sk-avatar" style="width:96px;height:96px;flex-shrink:0"></div><div style="flex:1"><div class="sk-row" style="justify-content:space-between"><div class="sk-line" style="width:120px;height:20px"></div><div class="sk-line" style="width:32px;height:32px;border-radius:8px"></div></div><div class="sk-row" style="justify-content:space-around;margin-top:10px"><div class="sk-line" style="width:50px;height:32px;border-radius:4px"></div><div class="sk-line" style="width:50px;height:32px;border-radius:4px"></div><div class="sk-line" style="width:50px;height:32px;border-radius:4px"></div></div></div></div><div class="sk-line" style="width:200px;height:14px;margin-top:12px"></div><div class="sk-line" style="width:260px;height:13px;margin-top:6px"></div><div class="sk-line" style="width:140px;height:12px;margin-top:6px"></div><div class="sk-line" style="width:100%;height:160px;border-radius:12px;margin-top:16px"></div></div>
+      <div id="profile-content" class="hidden">
+      <div class="profile-top-row">
         <div class="profile-avatar-container">
-          <img id="profile-avatar" src="" alt="Avatar" class="profile-avatar" />
+          <img id="profile-avatar" src="" alt="Avatar" class="profile-avatar-lg" />
+          <button class="profile-avatar-plus" id="btn-avatar-plus" aria-label="Change profile picture">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+          <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
         </div>
-        <p><strong>Username:</strong> <span id="profile-username"></span></p>
-        <p><strong>Email:</strong> <span id="profile-email"></span></p>
-        <p><strong>Bio:</strong> <span id="profile-bio"></span></p>
-        <p><strong>Status:</strong> <span id="profile-verified"></span></p>
-        <div class="profile-stats">
-          <span>Posts: <strong id="profile-post-count">0</strong></span>
-          <span>Followers: <strong id="profile-follower-count">0</strong></span>
-          <span>Following: <strong id="profile-following-count">0</strong></span>
-        </div>
-        <div class="profile-edit">
-          <h3>Edit Profile</h3>
-          <input type="text" id="edit-bio" placeholder="Update your bio" />
-          <input type="file" id="edit-avatar" accept="image/*" />
-          <button id="btn-save-profile">Save</button>
-        </div>
-        <hr />
-        <div class="profile-2fa-section">
-          <h3>Two-Factor Authentication</h3>
-          <div id="profile-2fa-status"></div>
-          <div id="profile-2fa-setup" class="hidden">
-            <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.), then enter the 6-digit code below.</p>
-            <div id="profile-2fa-qr" style="text-align:center;margin-bottom:12px"></div>
-            <p style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:12px">Or enter this key manually: <code id="profile-2fa-secret" style="font-size:14px;color:var(--link-color)"></code></p>
-            <div style="display:flex;gap:8px">
-              <input type="text" id="profile-2fa-code" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" style="flex:1" />
-              <button id="profile-2fa-verify-btn" class="btn-full" style="width:auto;padding:10px 20px">Verify</button>
-            </div>
-            <p class="auth-error" id="profile-2fa-error"></p>
+        <div class="profile-info-area">
+          <div class="profile-username-row">
+            <div class="profile-username" id="profile-username"></div>
+            <button class="profile-menu-btn" id="btn-profile-menu" aria-label="Assets">☰</button>
           </div>
-          <div id="profile-2fa-disable" class="hidden">
-            <p style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">2FA is currently enabled. To disable, enter your password.</p>
-            <div style="display:flex;gap:8px">
-              <input type="password" id="profile-2fa-password" placeholder="Your password" style="flex:1" />
-              <button id="profile-2fa-disable-btn" class="btn-danger" style="width:auto;padding:10px 20px">Disable 2FA</button>
-            </div>
-            <p class="auth-error" id="profile-2fa-disable-error"></p>
+          <div class="profile-stats-compact">
+            <div class="profile-stat"><strong id="profile-post-count">0</strong><span>posts</span></div>
+            <div class="profile-stat"><strong id="profile-follower-count">0</strong><span>followers</span></div>
+            <div class="profile-stat"><strong id="profile-following-count">0</strong><span>following</span></div>
           </div>
         </div>
-        <hr />
-        <button id="btn-delete-account" class="btn-danger">Delete My Account</button>
       </div>
-      <h3>My Posts</h3>
+      <div class="profile-email" id="profile-email"></div>
+      <div class="profile-bio" id="profile-bio"></div>
+      <div class="profile-verified" id="profile-verified"></div>
+      <button class="btn-profile-edit" id="btn-toggle-edit">Edit Profile</button>
+    <!-- Edit Profile Modal -->
+    <div class="edit-overlay hidden" id="edit-overlay"></div>
+    <div class="edit-modal hidden" id="edit-modal">
+      <div class="edit-modal-header">
+        <span class="edit-modal-title">Edit Profile</span>
+        <button class="edit-modal-close" id="btn-edit-close" aria-label="Close">✕</button>
+      </div>
+      <div class="edit-modal-body">
+        <div class="edit-field">
+          <label class="edit-field-label">Username</label>
+          <input type="text" id="edit-username" class="edit-field-input" />
+          <p class="edit-field-hint">Usernames can only contain letters, numbers, underscores, and periods. Changing your username will also change your profile link.</p>
+        </div>
+        <div class="edit-field">
+          <label class="edit-field-label">Bio</label>
+          <textarea id="edit-bio" class="edit-field-textarea" maxlength="80"></textarea>
+          <p class="edit-field-count"><span id="edit-bio-count">0</span>/80</p>
+        </div>
+        <div class="edit-modal-actions">
+          <button id="btn-save-profile">Save</button>
+          <button id="btn-cancel-edit" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+      <div class="profile-divider"></div>
+      <h3 class="profile-posts-heading">Posts</h3>
       <div id="profile-posts"></div>
+      <button id="btn-delete-account" class="btn-delete-account">Delete My Account</button>
+      </div>
+    </div>
+    <!-- Assets Side Panel -->
+    <div class="settings-overlay hidden" id="settings-overlay"></div>
+    <div class="settings-panel hidden" id="settings-panel">
+      <div class="settings-panel-header">
+        <span class="settings-panel-title">Assets</span>
+        <button class="settings-panel-close" id="btn-settings-close" aria-label="Close">✕</button>
+      </div>
+      <div class="settings-panel-body">
+        <div id="settings-page-main">
+          <div class="settings-section">
+            <div class="settings-section-title">Security</div>
+            <button class="settings-nav-item" id="btn-settings-2fa-nav">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Two-Factor Authentication</span>
+              <svg class="settings-nav-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="settings-page-2fa" class="hidden">
+          <button class="settings-back-btn" id="btn-settings-2fa-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Two-Factor Authentication
+          </button>
+          <div class="settings-2fa-body">
+            <div id="settings-2fa-setup" class="hidden">
+              <p class="settings-2fa-desc">Scan the QR code with your authenticator app, then enter the 6-digit code below.</p>
+              <div id="settings-2fa-qr" class="settings-2fa-qr"></div>
+              <p class="settings-2fa-manual">Or enter this key manually: <code id="settings-2fa-secret" class="settings-2fa-secret"></code></p>
+              <div class="settings-2fa-input-row">
+                <input type="text" id="settings-2fa-code" class="settings-2fa-input" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" />
+                <button id="settings-2fa-verify-btn" class="settings-2fa-btn">Verify</button>
+              </div>
+              <p class="auth-error" id="settings-2fa-error"></p>
+            </div>
+            <div id="settings-2fa-disable" class="hidden">
+              <p class="settings-2fa-desc">To disable, enter your password and click disable.</p>
+              <div class="settings-2fa-input-row">
+                <input type="password" id="settings-2fa-password" class="settings-2fa-input" placeholder="Your password" />
+                <button id="settings-2fa-disable-btn" class="settings-2fa-btn settings-2fa-btn-danger">Disable</button>
+              </div>
+              <p class="auth-error" id="settings-2fa-disable-error"></p>
+            </div>
+            <div id="settings-2fa-status-info" class="settings-2fa-status-info">
+              <span id="settings-2fa-badge" class="settings-2fa-badge">—</span>
+            </div>
+            <button id="btn-settings-2fa-enable" class="settings-2fa-toggle-btn hidden">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Enable 2FA
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </template>
 

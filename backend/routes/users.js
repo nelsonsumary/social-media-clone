@@ -100,10 +100,16 @@ router.delete("/:userId/follow", authenticateToken, async (req, res) => {
 
 router.put("/profile", authenticateToken, async (req, res) => {
   try {
-    const { bio, avatar } = req.body;
+    const { bio, avatar, username } = req.body;
     const updates = {};
     if (bio !== undefined) updates.bio = bio;
     if (avatar !== undefined) updates.avatar = avatar;
+    if (username !== undefined) {
+      if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+        return res.status(400).json({ error: "Username can only contain letters, numbers, underscores, and periods" });
+      }
+      updates.username = username;
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "Nothing to update" });

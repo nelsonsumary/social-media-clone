@@ -268,10 +268,15 @@ function attachAuthListeners() {
     const btn = form.querySelector("button[type=submit]");
     const errEl = document.getElementById("signup-error");
     errEl.textContent = "";
+    const username = form.username.value.trim();
+    if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+      errEl.textContent = "Invalid username";
+      return;
+    }
     btn.disabled = true;
     btn.innerHTML = '<span class="btn-spinner"></span>';
     try {
-      const data = await signup(form.username.value, form.email.value, form.password.value);
+      const data = await signup(username, form.email.value, form.password.value);
       saveSession(data.token, data.user);
       showApp();
       alert("A verification link has been sent to your email. Please check and click the link to activate your account.");
@@ -728,39 +733,79 @@ async function initProfile() {
   const user = getStoredUser();
   if (!user) return;
 
+  document.getElementById("profile-skeleton").classList.remove("hidden");
+  document.getElementById("profile-content").classList.add("hidden");
+
   document.getElementById("profile-username").textContent = user.username;
   document.getElementById("profile-email").textContent = user.email;
   document.getElementById("profile-verified").textContent = isVerified() ? "✅ Verified" : "❌ Not verified";
 
   try {
     const profile = await getUser(user.id);
+    document.getElementById("profile-skeleton").classList.add("hidden");
+    document.getElementById("profile-content").classList.remove("hidden");
+
     document.getElementById("profile-bio").textContent = profile.bio || "No bio yet";
-    document.getElementById("profile-post-count").textContent = profile.postCount;
-    document.getElementById("profile-follower-count").textContent = profile.followerCount;
-    document.getElementById("profile-following-count").textContent = profile.followingCount;
+    document.getElementById("profile-post-count").textContent = profile.postCount || 0;
+    document.getElementById("profile-follower-count").textContent = profile.followerCount || 0;
+    document.getElementById("profile-following-count").textContent = profile.followingCount || 0;
     if (profile.avatar) document.getElementById("profile-avatar").src = profile.avatar;
 
     const posts = await getUserPosts(user.id);
     renderPosts(posts, document.getElementById("profile-posts"), true);
   } catch {}
 
+  const editOverlay = document.getElementById("edit-overlay");
+  const editModal = document.getElementById("edit-modal");
+
+  const openEditModal = () => {
+    document.getElementById("edit-username").value = user.username;
+    const bioText = document.getElementById("profile-bio").textContent;
+    document.getElementById("edit-bio").value = bioText === "No bio yet" ? "" : bioText;
+    document.getElementById("edit-bio-count").textContent = document.getElementById("edit-bio").value.length;
+    editOverlay.classList.remove("hidden");
+    editModal.classList.remove("hidden");
+  };
+
+  const closeEditModal = () => {
+    editOverlay.classList.add("hidden");
+    editModal.classList.add("hidden");
+  };
+
+  document.getElementById("btn-toggle-edit").addEventListener("click", openEditModal);
+  editOverlay.addEventListener("click", closeEditModal);
+  document.getElementById("btn-edit-close").addEventListener("click", closeEditModal);
+  document.getElementById("btn-cancel-edit").addEventListener("click", closeEditModal);
+
+  document.getElementById("edit-bio").addEventListener("input", () => {
+    document.getElementById("edit-bio-count").textContent = document.getElementById("edit-bio").value.length;
+  });
+
   document.getElementById("btn-save-profile").addEventListener("click", async () => {
+    const username = document.getElementById("edit-username").value.trim();
     const bio = document.getElementById("edit-bio").value.trim();
-    const avatarFile = document.getElementById("edit-avatar").files[0];
 
     try {
-      const update = { bio: bio || undefined };
-      if (avatarFile) {
-        const upload = await uploadImage(avatarFile);
-        update.avatar = upload.url;
+      if (username && !/^[a-zA-Z0-9_.]+$/.test(username)) {
+        alert("Invalid username");
+        return;
       }
+      const update = {};
+      if (username) update.username = username;
+      if (bio) update.bio = bio;
       const updated = await updateProfile(update);
+      if (updated.username) {
+        user.username = updated.username;
+        document.getElementById("profile-username").textContent = updated.username;
+      }
       document.getElementById("profile-bio").textContent = updated.bio || "No bio yet";
-      if (updated.avatar) document.getElementById("profile-avatar").src = updated.avatar;
       const stored = getStoredUser();
-      stored.bio = updated.bio;
-      stored.avatar = updated.avatar;
-      localStorage.setItem("user", JSON.stringify(stored));
+      if (stored) {
+        stored.username = updated.username || stored.username;
+        stored.bio = updated.bio;
+        localStorage.setItem("user", JSON.stringify(stored));
+      }
+      closeEditModal();
       alert("Profile updated!");
     } catch (err) {
       alert(err.message);
@@ -777,49 +822,111 @@ async function initProfile() {
     }
   });
 
-  init2FA();
+  // Avatar upload via + button
+  document.getElementById("btn-avatar-plus").addEventListener("click", () => {
+    document.getElementById("avatar-file-input").click();
+  });
+
+  document.getElementById("avatar-file-input").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const upload = await uploadImage(file);
+      const updated = await updateProfile({ avatar: upload.url });
+      document.getElementById("profile-avatar").src = updated.avatar;
+      const stored = getStoredUser();
+      stored.avatar = updated.avatar;
+      localStorage.setItem("user", JSON.stringify(stored));
+    } catch (err) {
+      alert(err.message);
+    }
+    e.target.value = "";
+  });
+
+  // Assets side panel with page navigation
+  const overlay = document.getElementById("settings-overlay");
+  const panel = document.getElementById("settings-panel");
+  const pageMain = document.getElementById("settings-page-main");
+  const page2fa = document.getElementById("settings-page-2fa");
+
+  const showSettingsMain = () => {
+    pageMain.classList.remove("hidden");
+    page2fa.classList.add("hidden");
+  };
+
+  document.getElementById("btn-profile-menu").addEventListener("click", () => {
+    showSettingsMain();
+    overlay.classList.remove("hidden");
+    panel.classList.remove("hidden");
+  });
+
+  const closeSettings = () => {
+    overlay.classList.add("hidden");
+    panel.classList.add("hidden");
+    showSettingsMain();
+  };
+  overlay.addEventListener("click", closeSettings);
+  document.getElementById("btn-settings-close").addEventListener("click", closeSettings);
+
+  document.getElementById("btn-settings-2fa-nav").addEventListener("click", () => {
+    pageMain.classList.add("hidden");
+    page2fa.classList.remove("hidden");
+    initSettings2FA();
+  });
+
+  document.getElementById("btn-settings-2fa-back").addEventListener("click", showSettingsMain);
 }
 
-async function init2FA() {
-  const statusEl = document.getElementById("profile-2fa-status");
-  const setupEl = document.getElementById("profile-2fa-setup");
-  const disableEl = document.getElementById("profile-2fa-disable");
-  if (!statusEl) return;
+async function initSettings2FA() {
+  const setupEl = document.getElementById("settings-2fa-setup");
+  const disableEl = document.getElementById("settings-2fa-disable");
+  const enableBtn = document.getElementById("btn-settings-2fa-enable");
+  const badge = document.getElementById("settings-2fa-badge");
+  if (!enableBtn) return;
 
   try {
     const { totp_enabled } = await get2FAStatus();
     if (totp_enabled) {
-      statusEl.innerHTML = '<span style="color:#4caf50;font-weight:600">✅ Two-factor authentication is enabled</span>';
+      badge.textContent = "Enabled";
+      badge.className = "settings-2fa-badge enabled";
+      enableBtn.classList.add("hidden");
       setupEl.classList.add("hidden");
       disableEl.classList.remove("hidden");
+      setupSettings2FADisable();
     } else {
-      statusEl.innerHTML = '<span style="color:var(--text-muted)">❌ Two-factor authentication is disabled</span>';
-      setupEl.classList.remove("hidden");
+      badge.textContent = "Disabled";
+      badge.className = "settings-2fa-badge";
+      enableBtn.classList.remove("hidden");
+      setupEl.classList.add("hidden");
       disableEl.classList.add("hidden");
-      await setup2FAUI();
+      enableBtn.onclick = async () => {
+        enableBtn.classList.add("hidden");
+        setupEl.classList.remove("hidden");
+        await setupSettings2FASetup();
+      };
     }
-  } catch {
-    statusEl.textContent = "Failed to load 2FA status";
-  }
+  } catch {}
 }
 
-async function setup2FAUI() {
-  const qrEl = document.getElementById("profile-2fa-qr");
-  const secretEl = document.getElementById("profile-2fa-secret");
-  const codeInput = document.getElementById("profile-2fa-code");
-  const verifyBtn = document.getElementById("profile-2fa-verify-btn");
-  const errEl = document.getElementById("profile-2fa-error");
+async function setupSettings2FASetup() {
+  const qrEl = document.getElementById("settings-2fa-qr");
+  const secretEl = document.getElementById("settings-2fa-secret");
+  const codeInput = document.getElementById("settings-2fa-code");
+  const verifyBtn = document.getElementById("settings-2fa-verify-btn");
+  const errEl = document.getElementById("settings-2fa-error");
+  const enableBtn = document.getElementById("btn-settings-2fa-enable");
+  const setupEl = document.getElementById("settings-2fa-setup");
 
   try {
     const data = await setup2FA();
-    qrEl.innerHTML = `<img src="${data.qr_code}" alt="QR Code" style="max-width:200px;border-radius:8px" />`;
+    qrEl.innerHTML = `<img src="${data.qr_code}" alt="QR Code" />`;
     secretEl.textContent = data.secret;
   } catch (err) {
     qrEl.innerHTML = `<p class="auth-error">${err.message}</p>`;
     return;
   }
 
-  verifyBtn.addEventListener("click", async () => {
+  const doVerify = async () => {
     const code = codeInput.value.trim();
     errEl.textContent = "";
     if (!code || code.length !== 6) return (errEl.textContent = "Enter the 6-digit code");
@@ -828,21 +935,28 @@ async function setup2FAUI() {
     try {
       await verify2FA(code);
       alert("2FA enabled successfully!");
-      init2FA();
+      setupEl.classList.add("hidden");
+      initSettings2FA();
     } catch (err) {
       errEl.textContent = err.message;
+      setupEl.classList.add("hidden");
+      enableBtn.classList.remove("hidden");
     }
     verifyBtn.disabled = false;
     verifyBtn.textContent = "Verify";
-  });
+  };
 
-  codeInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") verifyBtn.click();
-  });
+  verifyBtn.onclick = doVerify;
+  codeInput.onkeydown = (e) => {
+    if (e.key === "Enter") doVerify();
+  };
+}
 
-  const disableBtn = document.getElementById("profile-2fa-disable-btn");
-  const pwInput = document.getElementById("profile-2fa-password");
-  const disableErrEl = document.getElementById("profile-2fa-disable-error");
+function setupSettings2FADisable() {
+  const disableBtn = document.getElementById("settings-2fa-disable-btn");
+  const pwInput = document.getElementById("settings-2fa-password");
+  const disableErrEl = document.getElementById("settings-2fa-disable-error");
+  const disableEl = document.getElementById("settings-2fa-disable");
 
   disableBtn.addEventListener("click", async () => {
     const password = pwInput.value;
@@ -853,17 +967,18 @@ async function setup2FAUI() {
     try {
       await disable2FA(password);
       alert("2FA disabled successfully!");
-      init2FA();
+      disableEl.classList.add("hidden");
+      initSettings2FA();
     } catch (err) {
       disableErrEl.textContent = err.message;
     }
     disableBtn.disabled = false;
-    disableBtn.textContent = "Disable 2FA";
+    disableBtn.textContent = "Disable";
   });
 
-  pwInput.addEventListener("keydown", (e) => {
+  pwInput.onkeydown = (e) => {
     if (e.key === "Enter") disableBtn.click();
-  });
+  };
 }
 
 // ── Find Users ──
@@ -1146,6 +1261,10 @@ function skeletonNotifications(count = 5) {
   return Array(count).fill().map(() =>
     `<div class="sk-card" style="border-radius:12px;margin-bottom:8px"><div class="sk-row"><div class="sk-avatar" style="width:32px;height:32px"></div><div style="flex:1"><div class="sk-line" style="width:200px;height:14px"></div></div><div class="sk-line" style="width:40px;height:12px"></div></div></div>`
   ).join("");
+}
+
+function skeletonProfile() {
+  return `<div class="sk-profile"><div class="sk-row"><div class="sk-avatar" style="width:96px;height:96px;flex-shrink:0"></div><div style="flex:1"><div class="sk-row" style="justify-content:space-between"><div class="sk-line" style="width:120px;height:20px"></div><div class="sk-line" style="width:32px;height:32px;border-radius:8px"></div></div><div class="sk-row" style="justify-content:space-around;margin-top:10px"><div class="sk-line" style="width:50px;height:32px;border-radius:4px"></div><div class="sk-line" style="width:50px;height:32px;border-radius:4px"></div><div class="sk-line" style="width:50px;height:32px;border-radius:4px"></div></div></div></div><div class="sk-line" style="width:200px;height:14px;margin-top:12px"></div><div class="sk-line" style="width:260px;height:13px;margin-top:6px"></div><div class="sk-line" style="width:140px;height:12px;margin-top:6px"></div><div class="sk-line" style="width:100%;height:160px;border-radius:12px;margin-top:16px"></div></div>`;
 }
 
 function emptyState(icon, title, subtitle) {
