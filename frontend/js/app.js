@@ -131,6 +131,22 @@ function showApp() {
     }
     updateNotifBadge();
   });
+  onWsMessage("edit_message", (data) => {
+    if (currentView !== "messages") return;
+    const msgEl = document.querySelector(`.msg[data-msgid="${data.message.id}"]`);
+    if (!msgEl) { loadConversation(currentChatUserId); return; }
+    const textEl = msgEl.querySelector(".msg-text");
+    if (textEl) textEl.textContent = data.message.content;
+  });
+  onWsMessage("delete_message", (data) => {
+    if (currentView !== "messages") return;
+    const msgEl = document.querySelector(`.msg[data-msgid="${data.messageId}"]`);
+    if (!msgEl) { loadConversation(currentChatUserId); return; }
+    msgEl.remove();
+    if (!document.querySelector(".msg")) {
+      document.getElementById("message-body").innerHTML = '<p class="hint" style="padding:20px;text-align:center">No messages yet</p>';
+    }
+  });
 
   $$(".nav-btn").forEach((btn) => {
     btn.addEventListener("click", () => {

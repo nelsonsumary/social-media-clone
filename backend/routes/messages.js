@@ -159,6 +159,9 @@ router.put("/item/:messageId", authenticateToken, async (req, res) => {
       .eq("id", req.params.messageId)
       .single();
 
+    sendToUser(existing.sender_id, { type: "edit_message", message });
+    sendToUser(existing.receiver_id, { type: "edit_message", message });
+
     res.json(message);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -169,7 +172,7 @@ router.delete("/item/:messageId", authenticateToken, async (req, res) => {
   try {
     const { data: existing } = await supabase
       .from("messages")
-      .select("id, sender_id")
+      .select("id, sender_id, receiver_id")
       .eq("id", req.params.messageId)
       .maybeSingle();
 
@@ -180,6 +183,9 @@ router.delete("/item/:messageId", authenticateToken, async (req, res) => {
       .from("messages")
       .delete()
       .eq("id", req.params.messageId);
+
+    sendToUser(existing.sender_id, { type: "delete_message", messageId: req.params.messageId });
+    sendToUser(existing.receiver_id, { type: "delete_message", messageId: req.params.messageId });
 
     res.json({ message: "Message deleted" });
   } catch (err) {
