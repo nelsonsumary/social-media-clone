@@ -364,6 +364,13 @@ function loadFacebookSDK(appId) {
 
 // ── Feed ──
 async function initFeed() {
+  const postBtn = document.getElementById("btn-post");
+  if (postBtn) {
+    postBtn.disabled = false;
+    postBtn.removeEventListener("click", handleCreatePost);
+    postBtn.addEventListener("click", handleCreatePost);
+  }
+
   const postsEl = document.getElementById("feed-posts");
   postsEl.innerHTML = skeletonFeed();
   try {
@@ -372,37 +379,30 @@ async function initFeed() {
   } catch {
     postsEl.innerHTML = '<p class="hint">Failed to load feed. Is the server running?</p>';
   }
-
-  const postBtn = document.getElementById("btn-post");
-
-  if (!isVerified()) {
-    postBtn.disabled = true;
-    postBtn.title = "Verify your email to post";
-  } else {
-    postBtn.addEventListener("click", handleCreatePost);
-  }
 }
 
 async function handleCreatePost() {
-  const content = document.getElementById("post-content").value.trim();
+  const contentEl = document.getElementById("post-content");
   const fileInput = document.getElementById("post-image");
   const statusEl = document.getElementById("post-status");
+  if (!contentEl || !statusEl) return;
 
+  const content = contentEl.value.trim();
   if (!content) return (statusEl.textContent = "Please write something");
 
   statusEl.textContent = "Posting...";
   try {
     const post = await createPost(content);
 
-    if (fileInput.files[0]) {
+    if (fileInput?.files[0]) {
       statusEl.textContent = "Uploading image...";
       const uploadResult = await uploadImage(fileInput.files[0]);
       await attachPostImage(post.id, uploadResult.url);
     }
 
     statusEl.textContent = "Posted!";
-    document.getElementById("post-content").value = "";
-    fileInput.value = "";
+    contentEl.value = "";
+    if (fileInput) fileInput.value = "";
     initFeed();
   } catch (err) {
     statusEl.textContent = err.message;

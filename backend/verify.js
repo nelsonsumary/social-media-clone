@@ -19,8 +19,19 @@ export async function requireVerified(req, res, next) {
       return next();
     }
     if (error) return res.status(500).json({ error: error.message });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    if (!user.verified) return res.status(403).json({ error: "Please verify your email before doing this" });
+    if (!user) {
+      const { data: checkUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", req.userId)
+        .maybeSingle();
+      if (!checkUser) {
+        return res.status(404).json({ error: "Your account was not found. Please log out and log back in." });
+      }
+      columnMissing = true;
+      return next();
+    }
+    if (user.verified === false) return res.status(403).json({ error: "Please verify your email before doing this" });
 
     next();
   } catch (err) {
