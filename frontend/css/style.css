@@ -429,6 +429,25 @@ background: linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);  bor
 .conv-item:hover { background: #f0edff; }
 .conv-item.active { background: #e8e3ff; border-left: 3px solid #6c5ce7; }
 
+.conv-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.conv-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.conv-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .conv-name { font-weight: 600; font-size: 15px; color: #2d3436; }
 .conv-preview { font-size: 13px; color: #b2bec3; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

@@ -439,7 +439,7 @@ function renderPosts(posts, container, showDelete = false) {
       (p) => `
       <div class="post-card" data-postid="${p.id}">
         <div class="post-header">
-          <img src="${p.avatar || ""}" class="post-avatar" data-userid="${p.user_id}" onerror="this.src=''" />
+          ${p.avatar ? `<img src="${p.avatar}" class="post-avatar" data-userid="${p.user_id}" onerror="this.outerHTML=defaultAvatarHtml('${escapeHtml(p.username)}',40,'post-avatar','data-userid=${p.user_id}')" />` : defaultAvatarHtml(p.username, 40, 'post-avatar', `data-userid=${p.user_id}`)}
           <a href="#" class="post-username" data-userid="${p.user_id}">${p.username}</a>
           <span class="post-time">${formatTime(p.created_at)}</span>
         </div>
@@ -668,8 +668,13 @@ async function loadConversations() {
       .map(
         (c) => `
         <div class="conv-item ${c.id === currentChatUserId ? "active" : ""}" data-userid="${c.id}">
-          <div class="conv-name">${c.username}</div>
-          <div class="conv-preview">${escapeHtml(c.last_message || "No messages")}</div>
+          <div class="conv-row">
+            ${c.avatar ? `<img src="${c.avatar}" class="conv-avatar" onerror="this.outerHTML=defaultAvatarHtml('${escapeHtml(c.username)}',36,'conv-avatar')" />` : defaultAvatarHtml(c.username, 36, 'conv-avatar')}
+            <div class="conv-info">
+              <div class="conv-name">${c.username}</div>
+              <div class="conv-preview">${escapeHtml(c.last_message || "No messages")}</div>
+            </div>
+          </div>
         </div>
       `
       )
@@ -852,7 +857,12 @@ async function initProfile() {
     document.getElementById("profile-post-count").textContent = profile.postCount || 0;
     document.getElementById("profile-follower-count").textContent = profile.followerCount || 0;
     document.getElementById("profile-following-count").textContent = profile.followingCount || 0;
-    if (profile.avatar) document.getElementById("profile-avatar").src = profile.avatar;
+    const avatarImg = document.getElementById("profile-avatar");
+    if (profile.avatar) {
+      avatarImg.src = profile.avatar;
+    } else {
+      avatarImg.outerHTML = defaultAvatarHtml(profile.username || user.username, 96, "profile-avatar-lg", 'id="profile-avatar"');
+    }
 
     const posts = await getUserPosts(user.id);
     renderPosts(posts, document.getElementById("profile-posts"), true);
@@ -936,7 +946,25 @@ async function initProfile() {
     try {
       const upload = await uploadImage(file);
       const updated = await updateProfile({ avatar: upload.url });
-      document.getElementById("profile-avatar").src = updated.avatar;
+      const container = document.getElementById("profile-avatar-container");
+      const oldPlus = document.getElementById("btn-avatar-plus");
+      if (container) {
+        container.innerHTML = `<img id="profile-avatar" src="${updated.avatar}" alt="Avatar" class="profile-avatar-lg" onerror="this.outerHTML=defaultAvatarHtml(this.alt||'?',96,'profile-avatar-lg','id=\\'profile-avatar\\'')" />` +
+          (oldPlus ? oldPlus.outerHTML : "") +
+          `<input type="file" id="avatar-file-input" accept="image/*" class="hidden" />`;
+        document.getElementById("btn-avatar-plus")?.addEventListener("click", () => {
+          document.getElementById("avatar-file-input").click();
+        });
+        document.getElementById("avatar-file-input")?.addEventListener("change", async (ev) => {
+          const file2 = ev.target.files[0];
+          if (!file2) return;
+          try {
+            const upload2 = await uploadImage(file2);
+            const updated2 = await updateProfile({ avatar: upload2.url });
+            document.getElementById("profile-avatar").src = updated2.avatar;
+          } catch (err) { alert(err.message); }
+        });
+      }
       const stored = getStoredUser();
       stored.avatar = updated.avatar;
       localStorage.setItem("user", JSON.stringify(stored));
@@ -1107,7 +1135,9 @@ async function initUsers() {
             (u, i) => `
             <div class="user-card">
               <div class="user-card-info">
-                <img src="${u.avatar || ""}" class="user-card-img" onerror="this.src=''" />
+                <div class="user-card-img-wrapper" style="flex-shrink:0">
+                  ${u.avatar ? `<img src="${u.avatar}" class="user-card-img" onerror="this.outerHTML=defaultAvatarHtml('${escapeHtml(u.username)}',40,'user-card-img')" />` : defaultAvatarHtml(u.username, 40, 'user-card-img')}
+                </div>
                 <div>
                   <div class="user-card-name">${u.username}</div>
                   <div style="font-size:13px;color:#888">${escapeHtml(u.bio || "")}</div>
@@ -1166,7 +1196,7 @@ async function showUserProfile(userId) {
         <h2 style="margin-bottom:16px">${escapeHtml(user.username)}</h2>
         <div class="profile-card" style="background:var(--bg-card);padding:24px;border-radius:16px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06)">
           <div class="profile-avatar-container" style="width:96px;height:96px;margin-bottom:16px">
-            <img src="${user.avatar || ""}" style="width:96px;height:96px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />
+            ${user.avatar ? `<img src="${user.avatar}" style="width:96px;height:96px;border-radius:50%;object-fit:cover" onerror="this.outerHTML=defaultAvatarHtml('${escapeHtml(user.username)}',96)" />` : defaultAvatarHtml(user.username, 96)}
           </div>
           <p style="margin-bottom:12px">${escapeHtml(user.bio || "")}</p>
           <div class="profile-stats" style="display:flex;gap:20px;margin-bottom:16px">
@@ -1403,6 +1433,13 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+function defaultAvatarHtml(username, size = 40, extraClass = "", extraAttrs = "") {
+  const letter = (username || "?").charAt(0).toUpperCase();
+  const colors = ["#6c5ce7","#fd79a8","#00b894","#fdcb6e","#e17055","#0984e3","#e84393","#00cec9"];
+  const color = colors[letter.charCodeAt(0) % colors.length];
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:${color};color:#fff;font-weight:600;font-size:${Math.round(size * 0.45)}px;flex-shrink:0" class="${extraClass}" ${extraAttrs}>${letter}</span>`;
 }
 
 // ── Init ──
