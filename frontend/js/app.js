@@ -131,19 +131,22 @@ function showApp() {
     }
     updateNotifBadge();
   });
+  function findMsgEl(id) {
+    return document.querySelector(`.msg[data-msgid="${id}"]`) || document.querySelector(`.msg-row[data-msgid="${id}"]`);
+  }
   onWsMessage("edit_message", (data) => {
     if (currentView !== "messages") return;
-    const msgEl = document.querySelector(`.msg[data-msgid="${data.message.id}"]`);
-    if (!msgEl) { loadConversation(currentChatUserId); return; }
-    const textEl = msgEl.querySelector(".msg-text");
+    const el = findMsgEl(data.message.id);
+    if (!el) { loadConversation(currentChatUserId); return; }
+    const textEl = el.querySelector(".msg-text");
     if (textEl) textEl.textContent = data.message.content;
   });
   onWsMessage("delete_message", (data) => {
     if (currentView !== "messages") return;
-    const msgEl = document.querySelector(`.msg[data-msgid="${data.messageId}"]`);
-    if (!msgEl) { loadConversation(currentChatUserId); return; }
-    msgEl.remove();
-    if (!document.querySelector(".msg")) {
+    const el = findMsgEl(data.messageId);
+    if (!el) { loadConversation(currentChatUserId); return; }
+    el.remove();
+    if (!document.querySelector(".msg, .msg-row")) {
       document.getElementById("message-body").innerHTML = '<p class="hint" style="padding:20px;text-align:center">No messages yet</p>';
     }
   });
@@ -720,21 +723,48 @@ async function loadConversation(userId) {
       .map(
         (m) => {
           const sent = m.sender_id === getStoredUser()?.id;
-          return `<div class="msg ${sent ? "sent" : "received"}" data-msgid="${m.id}">
+          if (sent) {
+            return `<div class="msg-row sent" data-msgid="${m.id}">
+              <div class="msg sent">
+                <span class="msg-text">${escapeHtml(m.content)}</span>
+                <div class="msg-time">${formatTime(m.created_at)}</div>
+              </div>
+              <div class="msg-menu">
+                <button class="msg-menu-btn" data-msgid="${m.id}">&#x22EE;</button>
+                <div class="msg-menu-dropdown hidden">
+                  <button class="msg-edit-btn" data-msgid="${m.id}">Edit</button>
+                  <button class="msg-del-btn" data-msgid="${m.id}">Delete</button>
+                </div>
+              </div>
+            </div>`;
+          }
+          return `<div class="msg received" data-msgid="${m.id}">
             <span class="msg-text">${escapeHtml(m.content)}</span>
             <div class="msg-time">${formatTime(m.created_at)}</div>
-            ${sent ? `<div class="msg-actions">
-              <button class="msg-edit-btn" data-msgid="${m.id}">Edit</button>
-              <button class="msg-del-btn" data-msgid="${m.id}">Delete</button>
-            </div>` : ""}
           </div>`;
         }
       )
       .join("");
 
+    function closeAllMsgMenus() {
+      document.querySelectorAll(".msg-menu-dropdown").forEach((d) => d.classList.add("hidden"));
+    }
+
+    body.querySelectorAll(".msg-menu-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeAllMsgMenus();
+        const dd = btn.parentElement.querySelector(".msg-menu-dropdown");
+        dd.classList.toggle("hidden");
+      });
+    });
+
     body.querySelectorAll(".msg-edit-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const msgEl = btn.closest(".msg");
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeAllMsgMenus();
+        const row = btn.closest(".msg-row");
+        const msgEl = row.querySelector(".msg");
         const textEl = msgEl.querySelector(".msg-text");
         const orig = textEl.textContent;
         textEl.innerHTML = `<input type="text" class="msg-edit-input" value="${escapeHtml(orig)}" />
@@ -765,7 +795,9 @@ async function loadConversation(userId) {
     });
 
     body.querySelectorAll(".msg-del-btn").forEach((btn) => {
-      btn.addEventListener("click", async () => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        closeAllMsgMenus();
         if (!confirm("Delete this message?")) return;
         try {
           await deleteMessage(btn.dataset.msgid);
@@ -773,6 +805,11 @@ async function loadConversation(userId) {
         } catch (err) { alert(err.message); }
       });
     });
+
+    if (!document.getElementById("message-body")._menuListener) {
+      document.addEventListener("click", closeAllMsgMenus);
+      document.getElementById("message-body")._menuListener = true;
+    }
 
     body.scrollTop = body.scrollHeight;
   } catch {

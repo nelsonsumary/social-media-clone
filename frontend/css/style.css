@@ -485,30 +485,68 @@ background: linear-gradient(180deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);  bor
   margin-top: 4px;
 }
 
-.msg-actions {
+.msg-row.sent {
   display: flex;
-  gap: 6px;
-  margin-top: 6px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
-.msg-edit-btn,
-.msg-del-btn {
+.msg-row.sent .msg {
+  max-width: 65%;
+}
+
+.msg-menu {
+  position: relative;
+  flex-shrink: 0;
+  padding-top: 8px;
+}
+
+.msg-menu-btn {
   background: none;
   border: none;
-  font-size: 11px;
+  font-size: 18px;
   cursor: pointer;
   padding: 2px 6px;
-  border-radius: 4px;
-  opacity: 0.6;
+  border-radius: 50%;
+  color: var(--text-hint, #999);
+  line-height: 1;
+  opacity: 0.4;
+  transition: opacity 0.15s;
 }
 
-.msg-edit-btn:hover,
-.msg-del-btn:hover {
+.msg-menu-btn:hover {
   opacity: 1;
+  background: rgba(0,0,0,0.05);
 }
 
-.msg-edit-btn { color: #6c5ce7; }
-.msg-del-btn { color: #e74c3c; }
+.msg-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  min-width: 90px;
+  z-index: 10;
+  overflow: hidden;
+}
+
+.msg-menu-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  color: #333;
+}
+
+.msg-menu-dropdown button:hover {
+  background: #f5f5f5;
+} 
 
 .msg-edit-input {
   width: 100%;
@@ -1526,8 +1564,10 @@ html.dark .message-input-area {
   border-color: var(--border-color);
 }
 
-html.dark .msg-edit-btn { color: #a29bfe; }
-html.dark .msg-del-btn { color: #ff6b6b; }
+html.dark .msg-menu-btn:hover { background: rgba(255,255,255,0.1); }
+html.dark .msg-menu-dropdown { background: #2a2a4a; box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+html.dark .msg-menu-dropdown button { color: #eee; }
+html.dark .msg-menu-dropdown button:hover { background: #3a3a5a; }
 html.dark .msg-edit-input { background: #2a2a4a; border-color: #444; color: #eee; }
 html.dark .msg-edit-cancel { background: #444; color: #eee; }
 html.dark .profile-stat strong { color: var(--text-primary); }
